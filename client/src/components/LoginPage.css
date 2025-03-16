@@ -1,0 +1,87 @@
+body {
+    margin: 0;
+    padding: 0;
+    background: url('https://cdn.jsdelivr.net/gh/Guru322/Express-pairing-code@f1b0b32eb6f519f9ef8494683d394b6826e750ae/client/src/akeno.jpg') no-repeat center center fixed;
+    background-size: cover;
+    font-family: 'Segoe UI', sans-serif;
+  }
+  
+  .login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  
+  .glass-box {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 30px;
+    width: 300px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    text-align: center;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+  
+  .glass-box input,
+  .glass-box button {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: none;
+    outline: none;
+    border-radius: 8px;
+  }
+  
+  .glass-box input {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+  }
+  
+  .glass-box button {
+    background: rgba(0, 255, 170, 0.4);
+    color: #fff;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s ease;
+  }
+  
+  .glass-box button:hover {
+    background: rgba(0, 255, 170, 0.7);
+  }
+  
+  /* Popup Styles */
+  .popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .popup-box {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    padding: 30px;
+    border-radius: 15px;
+    color: #fff;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    text-align: center;
+  }
+  
+  .popup-box button {
+    background: rgba(0, 255, 170, 0.4);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    margin-top: 15px;
+    color: #fff;
+    cursor: pointer;
+  }
+  

@@ -1,0 +1,25 @@
+{
+  "name": "whatsapp-fullstack-sender",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "server": "nodemon index.js",
+    "client": "cd client && npm start",
+    "build": "cd client && npm run build",
+    "dev": "concurrently \"npm run server\" \"npm run client\""
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "*",
+    "body-parser": "^1.20.1",
+    "express": "^4.18.1",
+    "pino": "^8.1.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1"
+  },
+  "devDependencies": {
+    "concurrently": "^8.0.1",
+    "nodemon": "^3.0.1"
+  }
+}
