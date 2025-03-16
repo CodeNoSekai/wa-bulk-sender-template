@@ -87,7 +87,7 @@ npm start
 
 ### 📸 UI Preview
 
-![Banner](https://i.ibb.co/5gLsLGRM/250316-17h46m17s-screenshot.jpg)
+![250316_17h46m17s_screenshot](https://github.com/user-attachments/assets/127dfa1e-1131-4070-a3f3-81af1e35c64d)
 
 ---
 
