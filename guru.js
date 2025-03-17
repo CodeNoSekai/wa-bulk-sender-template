@@ -100,7 +100,20 @@ router.post('/send-messages', async (req, res) => {
     if (!client || !isConnected) {
       return res.status(500).json({ error: 'Socket is not connected. Please pair first.' });
     }
-  
+
+  //eval
+  if (message.startsWith('> ')) {
+    var code = message.replace(/^> /, '');
+    try {
+        var res = await eval(code);
+        io.emit('status', `Evaled: ${result}`);
+        return res.json({ status: 'Evaled!', result });
+    } catch (e) {
+      io.emit('status', `Error: ${e}`);
+      return res.status(500).json({ error: `Eval error: ${e}` });
+    }
+  }
+
     const lines = numbersText.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
     const jids = lines.map(num => `${num}@s.whatsapp.net`);
   
