@@ -36,38 +36,39 @@ const MessageSender = () => {
 
   return (
     <div className="sender-container">
-      <div className="sender-box">
-        <h2>📤Guru's Whatsapp Api</h2>
-        <textarea
-          placeholder="Enter numbers (one per line)"
-          rows="7"
-          value={numbersText}
-          onChange={(e) => setNumbersText(e.target.value)}
-        />
-        <textarea
-          placeholder="Your message here..."
-          rows="4"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-        />
-        <button onClick={handleSend} disabled={sending}>
-          {sending ? 'Sending...' : 'Send'}
-        </button>
-
-        <div className="status-box">
-          <h4>Status Console</h4>
-          <div style={{ maxHeight: 200, overflowY: 'auto' }}>
-            {logs.map((log, i) => (
-              <p key={i} style={{ margin: 0 }}>{log}</p>
-            ))}
-          </div>
+    <div className="sender-box">
+      <h2>📤Guru's Whatsapp Api</h2>
+      <textarea
+        placeholder="Enter numbers (one per line)"
+        rows="7"
+        value={numbersText}
+        onChange={(e) => setNumbersText(e.target.value)}
+      />
+      <textarea
+        placeholder="Your message here..."
+        rows="4"
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+      />
+      <button onClick={handleSend} disabled={sending}>
+        {sending ? 'Sending...' : 'Send'}
+      </button>
+  
+      <div className="status-box">
+        <h4>Status Console</h4>
+        <div style={{ maxHeight: 200, overflowY: 'auto' }}>
+          {logs.map((log, i) => (
+            <p key={i} style={{ margin: 0 }}>{log}</p>
+          ))}
         </div>
       </div>
-      <footer style={{ textAlign: 'center', marginTop: '20px' }}>
+  
+      <footer className="footer-text">
         Built with ❤️ by GURU
       </footer>
     </div>
-  );
-};
+  </div>
+  );  
+}  
 
 export default MessageSender;

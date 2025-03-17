@@ -67,3 +67,15 @@
     border: 1px solid rgba(0, 255, 170, 0.3);
   }
   
+  .footer-text {
+    width: 100%;
+    text-align: center;
+    margin-top: 40px;
+    padding-bottom: 10px;
+    color: #ccc;
+    font-size: 14px;
+    opacity: 0.75;
+    position: relative;
+  }
+  
+  

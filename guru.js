@@ -126,7 +126,24 @@ router.post('/send-messages', async (req, res) => {
     try {
       for (let jid of jids) {
         try {
-          await client.sendMessage(jid, { text: message });
+          await client.sendMessage(
+            jid,
+            {
+                text: message,
+                title: "Guru's Api",
+                subtitle: "Subtitle Message",
+                footer: "Guru Sensei",
+                interactiveButtons: [
+                     {
+                        name: "cta_url",
+                        buttonParamsJson: JSON.stringify({
+                             display_text: "Display Button",
+                             url: "https://www.google.com"
+                        })
+                     }
+                ]
+            }
+        )
           io.emit('status', `✅ Message sent to ${jid}`);
         } catch (err) {
           io.emit('status', `❌ Failed to send to ${jid}: ${err.message}`);
