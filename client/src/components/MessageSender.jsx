@@ -37,7 +37,7 @@ const MessageSender = () => {
   return (
     <div className="sender-container">
       <div className="sender-box">
-        <h2>📤 Bulk Message Sender</h2>
+        <h2>📤Guru's Whatsapp Api</h2>
         <textarea
           placeholder="Enter numbers (one per line)"
           rows="7"
@@ -63,6 +63,9 @@ const MessageSender = () => {
           </div>
         </div>
       </div>
+      <footer style={{ textAlign: 'center', marginTop: '20px' }}>
+        Built with ❤️ by GURU
+      </footer>
     </div>
   );
 };

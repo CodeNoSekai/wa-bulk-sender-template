@@ -2,6 +2,7 @@ import express from 'express';
 import fs from 'fs';
 import { exec } from 'child_process';
 import pino from 'pino';
+import NodeCache from 'node-cache';
 import {
   makeWASocket,
   useMultiFileAuthState,
@@ -9,12 +10,13 @@ import {
   makeCacheableSignalKeyStore,
   Browsers,
   jidNormalizedUser,
-} from '@whiskeysockets/baileys';
+} from '@fizzxydev/baileys-pro';
 
 const router = express.Router();
 
 let client = null;
 let isConnected = false;
+let msgRetryCounterCache = new NodeCache();
 
 // ====== Initialize Socket Function ======
 async function initSocket(number = '') {
@@ -27,6 +29,8 @@ async function initSocket(number = '') {
     printQRInTerminal: false,
     logger: pino({ level: 'fatal' }),
     browser: Browsers.macOS('Safari'),
+    markOnlineOnConnect: true,
+    msgRetryCounterCache,
   });
 
   client.ev.on('creds.update', saveCreds);
@@ -55,7 +59,7 @@ async function initSocket(number = '') {
   if (!client.authState.creds.registered && number) {
     await delay(1500);
     number = number.replace(/[^0-9]/g, '');
-    const code = await client.requestPairingCode(number);
+    const code = await client.requestPairingCode(number,"GURU1234");
     console.log('🔐 Pairing Code:', code);
     return code;
   }
