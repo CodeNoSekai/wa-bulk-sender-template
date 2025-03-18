@@ -1,0 +1,38 @@
+graph TD
+    Root["WhatsApp Bulk Sender"] --> GH[".github"]
+    GH --> Workflows["workflows"]
+    Workflows --> LockfileYML["lockfiler.yml"]
+    
+    Root --> Client["client/"]
+    Client --> Public["public/"]
+    Public --> IndexHTML["index.html"]
+    
+    Client --> Src["src/"]
+    Src --> Components["components/"]
+    Components --> LoginCSS["LoginPage.css"]
+    Components --> LoginJSX["LoginPage.jsx"]
+    Components --> MessageCSS["MessageSender.css"]
+    Components --> MessageJSX["MessageSender.jsx"]
+    Components --> TCTT["tctt.txt"]
+    
+    Src --> AppJSX["App.jsx"]
+    Src --> IndexJS["index.js"]
+    
+    Client --> ClientPackage["package.json"]
+    
+    Root --> GitIgnore[".gitignore"]
+    Root --> GuruJS["guru.js"]
+    Root --> IndexJS2["index.js"]
+    Root --> LICENSE["LICENSE"]
+    Root --> PackageJSON["package.json"]
+    Root --> README["README.md"]
+    
+    classDef frontend fill:#ff9,stroke:#333,stroke-width:1px
+    classDef backend fill:#9cf,stroke:#333,stroke-width:1px
+    classDef config fill:#f9c,stroke:#333,stroke-width:1px
+    classDef doc fill:#cfc,stroke:#333,stroke-width:1px
+    
+    class Client,Public,Src,Components,LoginCSS,LoginJSX,MessageCSS,MessageJSX,AppJSX,IndexJS,ClientPackage frontend
+    class GuruJS,IndexJS2 backend
+    class GH,Workflows,LockfileYML,GitIgnore,PackageJSON config
+    class LICENSE,README doc
