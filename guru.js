@@ -17,6 +17,8 @@ const router = express.Router();
 let client = null;
 let isConnected = false;
 let msgRetryCounterCache = new NodeCache();
+const groupCache = new NodeCache({ stdTTL: 5 * 60, useClones: false })
+
 
 // ====== Initialize Socket Function ======
 async function initSocket(number = '') {
@@ -31,6 +33,7 @@ async function initSocket(number = '') {
     browser: Browsers.macOS('Safari'),
     markOnlineOnConnect: true,
     msgRetryCounterCache,
+    cachedGroupMetadata: async (jid) => groupCache.get(jid),
   });
 
   client.ev.on('creds.update', saveCreds);
@@ -94,71 +97,92 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/send-messages', async (req, res) => {
-    const { numbersText, message } = req.body;
-    const io = req.app.get('io');
-  
-    if (!numbersText || !message) {
-      return res.status(400).json({ error: 'Missing numbersText or message' });
-    }
-  
-    if (!client || !isConnected) {
-      return res.status(500).json({ error: 'Socket is not connected. Please pair first.' });
-    }
+  const { numbersText, message } = req.body;
+  const io = req.app.get('io');
 
-  //eval
-  if (message.startsWith('> ')) {
-    var code = message.replace(/^> /, '');
-    try {
-        var res = await eval(code);
-        io.emit('status', `Evaled: ${result}`);
-        return res.json({ status: 'Evaled!', result });
-    } catch (e) {
-      io.emit('status', `Error: ${e}`);
-      return res.status(500).json({ error: `Eval error: ${e}` });
-    }
+  if (!numbersText || !message) {
+    return res.status(400).json({ error: 'Missing numbersText or message' });
   }
 
-    const lines = numbersText.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
-    const jids = lines.map(num => `${num}@s.whatsapp.net`);
-  
-    io.emit('status', `📤 Message sending started to ${jids.length} numbers.`);
-  
-    try {
-      for (let jid of jids) {
-        try {
-          await client.sendMessage(
-            jid,
-            {
-                text: message,
-                title: "Guru's Api",
-                subtitle: "Subtitle Message",
-                footer: "Guru Sensei",
-                interactiveButtons: [
-                     {
-                        name: "cta_url",
-                        buttonParamsJson: JSON.stringify({
-                             display_text: "Display Button",
-                             url: "https://www.google.com"
-                        })
-                     }
-                ]
-            }
+  if (!client || !isConnected) {
+    return res.status(500).json({ error: 'Socket is not connected. Please pair first.' });
+  }
+
+//eval
+if (message.startsWith('> ')) {
+  var code = message.replace(/^> /, '');
+  try {
+      var result = await eval(code);
+      io.emit('status', `Evaled: ${result}`);
+      return res.json({ status: 'Evaled!', result });
+  } catch (e) {
+    io.emit('status', `Error: ${e}`);
+    return res.status(500).json({ error: `Eval error: ${e}` });
+  }
+}
+
+  const lines = numbersText.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  const jids = lines.map(num => `${num}@s.whatsapp.net`);
+
+  io.emit('status', `📤 Message sending started to ${jids.length} numbers.`);
+  io.emit('counts', { total: jids.length, successful: 0, failed: 0 });
+
+  let successCount = 0;
+  let failureCount = 0;
+
+  try {
+    for (let jid of jids) {
+      try {
+        await client.sendMessage(
+          jid,
+          {
+              text: message,
+              title: "Guru's Api",
+              subtitle: "Subtitle Message",
+              footer: "Guru Sensei",
+              interactiveButtons: [
+                   {
+                      name: "cta_url",
+                      buttonParamsJson: JSON.stringify({
+                           display_text: "Display Button",
+                           url: "https://www.google.com"
+                      })
+                   }
+              ]
+          }
         )
-          io.emit('status', `✅ Message sent to ${jid}`);
-        } catch (err) {
-          io.emit('status', `❌ Failed to send to ${jid}: ${err.message}`);
-        }
-        await delay(30000);
+        successCount++;
+        io.emit('status', `✅ Message sent to ${jid}`);
+        io.emit('counts', { total: jids.length, successful: successCount, failed: failureCount });
+      } catch (err) {
+        failureCount++;
+        io.emit('status', `❌ Failed to send to ${jid}: ${err.message}`);
+        io.emit('counts', { total: jids.length, successful: successCount, failed: failureCount });
       }
-  
-      io.emit('status', `✅ All messages sent successfully.`);
-      return res.json({ status: 'Sending completed' });
-    } catch (err) {
-      io.emit('status', `❌ Sending failed: ${err.message}`);
-      return res.status(500).json({ error: 'Sending error' });
+      await delay(30000);
     }
-  });
-  
+
+    io.emit('status', `✅ All messages processed. Successful: ${successCount}, Failed: ${failureCount}`);
+    return res.json({ 
+      status: 'Sending completed', 
+      summary: {
+        total: jids.length,
+        successful: successCount,
+        failed: failureCount
+      }
+    });
+  } catch (err) {
+    io.emit('status', `❌ Sending failed: ${err.message}. Successful: ${successCount}, Failed: ${failureCount}`);
+    return res.status(500).json({ 
+      error: 'Sending error',
+      summary: {
+        total: jids.length,
+        successful: successCount,
+        failed: failureCount
+      }
+    });
+  }
+});
   
 
 export default router;
