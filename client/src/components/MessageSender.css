@@ -1,135 +1,409 @@
-.sender-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background: url('https://cdn.jsdelivr.net/gh/Guru322/Express-pairing-code@f1b0b32eb6f519f9ef8494683d394b6826e750ae/client/src/akeno.jpg') no-repeat center center fixed;
-    background-size: cover;
-  }
-  
-  .sender-box {
-    width: 90%;
-    max-width: 600px;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(10px);
-    padding: 30px;
-    border-radius: 20px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-    color: #fff;
-    text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-  }
-  
-  .sender-box h2 {
-    margin-bottom: 20px;
-    font-weight: 600;
-  }
-  
-  .sender-box textarea {
-    width: 100%;
-    padding: 12px;
-    margin: 10px 0;
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    border-radius: 10px;
-    color: #fff;
-    font-size: 14px;
-    resize: none;
-    outline: none;
-  }
-  
-  .sender-box button {
-    width: 100%;
-    padding: 12px;
-    margin-top: 10px;
-    background: rgba(0, 255, 170, 0.4);
-    border: none;
-    border-radius: 10px;
-    font-weight: bold;
-    color: #fff;
-    cursor: pointer;
-    transition: background 0.3s;
-  }
-  
-  .sender-box button:hover {
-    background: rgba(0, 255, 170, 0.7);
-  }
-  
-  .status-box {
-    background: rgba(0, 0, 0, 0.3);
-    margin-top: 20px;
-    padding: 15px;
-    border-radius: 12px;
-    text-align: left;
-    font-family: monospace;
-    font-size: 14px;
-    color: #00ffae;
-    border: 1px solid rgba(0, 255, 170, 0.3);
-  }
-  
-  .footer-text {
-    width: 100%;
-    text-align: center;
-    margin-top: 40px;
-    padding-bottom: 10px;
-    color: #ccc;
-    font-size: 14px;
-    opacity: 0.75;
-    position: relative;
-  }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-  .summary-box {
-    margin: 15px 0;
-    padding: 10px 15px;
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-  }
-  
-  .summary-stats {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 10px;
-  }
-  
-  .stat {
-    text-align: center;
-  }
-  
-  .stat-label {
-    display: block;
-    font-size: 0.9rem;
-    color: #666;
-  }
-  
-  .stat-value {
-    font-size: 1.2rem;
-    font-weight: bold;
-  }
-  
-  .stat-value.success {
-    color: #28a745;
-  }
-  
-  .stat-value.failed {
-    color: #dc3545;
-  }
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  background: linear-gradient(135deg, #25d366, #128c7e);
+  background-attachment: fixed;
+  color: #333;
+  min-height: 100vh;
+}
 
-  .summary-box.realtime {
-    background-color: #f0f8ff;
-    border: 1px solid #b8daff;
-    animation: pulse 2s infinite;
+/* Glass Effect Styles */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.glass-inner {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-dark {
+  background: rgba(30, 30, 36, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 8px;
+  border: 1px solid rgba(66, 66, 66, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* Top Navigation */
+.top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 15px 20px;
+}
+
+.top-nav h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  /* Center the title */
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.nav-spacer {
+  width: 40px; /* Same width as sidebar toggle button */
+}
+
+/* Sidebar Toggle */
+.sidebar-toggle {
+  background: rgba(255, 255, 255, 0.3);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.sidebar-toggle:hover {
+  background: rgba(255, 255, 255, 0.5);
+  transform: scale(1.05);
+}
+
+/* Sidebar Animation */
+.sidebar {
+  transition: transform 0.3s ease, opacity 0.3s ease, width 0.3s ease;
+}
+
+/* Content area adjustments when sidebar is closed */
+.content-wrapper.full-width {
+  margin-left: 0;
+}
+
+/* Add this to your existing sidebar CSS */
+@media (max-width: 768px) {
+  .sidebar {
+    position: absolute;
+    z-index: 90;
+    height: calc(100vh - 70px);
+    transform: translateX(0);
   }
   
-  @keyframes pulse {
-    0% {
-      box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.2);
-    }
-    70% {
-      box-shadow: 0 0 0 5px rgba(0, 123, 255, 0);
-    }
-    100% {
-      box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
-    }
+  .sidebar:not(.visible) {
+    transform: translateX(-100%);
   }
+}
 
+/* Main Content Layout */
+.main-content {
+  display: flex;
+  flex: 1;
+  height: calc(100vh - 120px); /* Account for header and footer */
+}
+
+/* Sidebar */
+.sidebar {
+  width: 250px;
+  padding: 20px 0;
+  will-change: transform; /* Optimize for animations */
+  transform: translateZ(0); /* Force GPU acceleration */
+  height: 100%;
+  margin: 10px;
+}
+
+.sidebar-item {
+  padding: 14px 20px;
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s ease;
+  margin: 5px 10px;
+  border-radius: 6px;
+}
+
+.sidebar-item:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: translateX(5px);
+}
+
+.sidebar-item.active {
+  background-color: rgba(255, 255, 255, 0.5);
+  border-left: 3px solid #25d366;
+  transform: translateX(5px);
+}
+
+.sidebar-icon {
+  margin-right: 10px;
+  font-size: 1.2rem;
+}
+
+/* Content Area */
+.content-wrapper {
+  flex: 1;
+  padding: 10px 20px;
+  overflow-y: auto;
+  height: 100%;
+  scroll-behavior: smooth;
+  transform: translateZ(0); /* Force GPU acceleration */
+  will-change: transform; /* Optimize for animations */
+  margin: 10px;
+}
+
+.content-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.content-wrapper::-webkit-scrollbar-thumb {
+  background-color: rgba(37, 211, 102, 0.6);
+  border-radius: 4px;
+}
+
+.content-wrapper::-webkit-scrollbar-track {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.content-area {
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.content-area h3 {
+  margin-bottom: 20px;
+  color: #333;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  padding-bottom: 10px;
+}
+
+/* Form Elements */
+.input-group {
+  margin-bottom: 15px;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #333;
+}
+
+.input-group input,
+.input-group textarea {
+  width: 100%;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.input-group input:focus,
+.input-group textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(37, 211, 102, 0.3);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.input-group textarea {
+  resize: vertical;
+}
+
+.form-row {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.form-row .input-group {
+  flex: 1;
+}
+
+.button-settings {
+  border-radius: 6px;
+  padding: 15px;
+  margin: 15px 0;
+}
+
+.button-settings h4 {
+  margin-bottom: 15px;
+  color: #444;
+}
+
+/* Action Buttons */
+.send-button {
+  background-color: #25d366;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  width: 100%;
+  box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.send-button:hover {
+  background-color: #128c7e;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+}
+
+.send-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 10px rgba(37, 211, 102, 0.2);
+}
+
+.send-button:disabled {
+  background-color: rgba(204, 204, 204, 0.7);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Summary Box */
+.summary-box {
+  padding: 15px;
+  margin: 20px 0;
+}
+
+.summary-box h4 {
+  margin-bottom: 15px;
+  color: #444;
+  text-align: center;
+}
+
+.summary-stats {
+  display: flex;
+  justify-content: space-around;
+}
+
+.stat {
+  text-align: center;
+  flex: 1;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.9rem;
+  color: #444;
+  margin-bottom: 5px;
+}
+
+.stat-value {
+  font-size: 1.4rem;
+  font-weight: bold;
+}
+
+.stat-value.success {
+  color: #28a745;
+  text-shadow: 0 1px 2px rgba(40, 167, 69, 0.2);
+}
+
+.stat-value.failed {
+  color: #dc3545;
+  text-shadow: 0 1px 2px rgba(220, 53, 69, 0.2);
+}
+
+/* Real-time Stats */
+.summary-box.realtime {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(37, 211, 102, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 211, 102, 0);
+  }
+}
+
+/* Status Console */
+.status-box {
+  padding: 15px;
+  margin-top: 20px;
+  color: #f0f0f0;
+}
+
+.status-box h4 {
+  margin-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 8px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.logs {
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 13px;
+  padding-right: 5px;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.logs::-webkit-scrollbar {
+  width: 6px;
+}
+
+.logs::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.logs::-webkit-scrollbar-track {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.logs p {
+  margin: 0;
+  padding: 4px 0;
+}
+
+/* Footer */
+.footer-text {
+  text-align: center;
+  padding: 15px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  margin-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}

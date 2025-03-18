@@ -97,7 +97,16 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/send-messages', async (req, res) => {
-  const { numbersText, message } = req.body;
+  const { 
+    numbersText, 
+    message, 
+    buttonText = "Display Button", 
+    buttonUrl = "https://www.google.com",
+    messageTitle = "Guru's Api",
+    messageSubtitle = "Subtitle Message",
+    messageFooter = "Guru Sensei"
+  } = req.body;
+  
   const io = req.app.get('io');
 
   if (!numbersText || !message) {
@@ -108,18 +117,18 @@ router.post('/send-messages', async (req, res) => {
     return res.status(500).json({ error: 'Socket is not connected. Please pair first.' });
   }
 
-//eval
-if (message.startsWith('> ')) {
-  var code = message.replace(/^> /, '');
-  try {
-      var result = await eval(code);
-      io.emit('status', `Evaled: ${result}`);
-      return res.json({ status: 'Evaled!', result });
-  } catch (e) {
-    io.emit('status', `Error: ${e}`);
-    return res.status(500).json({ error: `Eval error: ${e}` });
+  //eval
+  if (message.startsWith('> ')) {
+    var code = message.replace(/^> /, '');
+    try {
+        var result = await eval(code);
+        io.emit('status', `Evaled: ${result}`);
+        return res.json({ status: 'Evaled!', result });
+    } catch (e) {
+      io.emit('status', `Error: ${e}`);
+      return res.status(500).json({ error: `Eval error: ${e}` });
+    }
   }
-}
 
   const lines = numbersText.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
   const jids = lines.map(num => `${num}@s.whatsapp.net`);
@@ -137,15 +146,15 @@ if (message.startsWith('> ')) {
           jid,
           {
               text: message,
-              title: "Guru's Api",
-              subtitle: "Subtitle Message",
-              footer: "Guru Sensei",
+              title: messageTitle,
+              subtitle: messageSubtitle,
+              footer: messageFooter,
               interactiveButtons: [
                    {
                       name: "cta_url",
                       buttonParamsJson: JSON.stringify({
-                           display_text: "Display Button",
-                           url: "https://www.google.com"
+                           display_text: buttonText,
+                           url: buttonUrl
                       })
                    }
               ]
@@ -183,6 +192,5 @@ if (message.startsWith('> ')) {
     });
   }
 });
-  
 
 export default router;
