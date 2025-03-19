@@ -4,6 +4,11 @@
   padding: 0;
 }
 
+:root {
+  --white: #ffffff;
+  --green: #25d366;
+}
+
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   line-height: 1.6;
@@ -24,26 +29,26 @@ body {
 }
 
 .glass-nav {
-  background: rgba(18, 18, 24, 0.75);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(18, 18, 24, 0.85);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .glass-dark {
-  background: rgba(30, 30, 40, 0.6);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(30, 30, 40, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 .glass-darker {
-  background: rgba(20, 20, 28, 0.7);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(20, 20, 28, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
@@ -416,7 +421,6 @@ body {
   }
 }
 
-/* Star Background */
 .star-background {
   position: fixed;
   top: 0;
@@ -425,4 +429,64 @@ body {
   height: 100%;
   z-index: -1;
   background: linear-gradient(135deg, #1e1e2a, #0f0f14);
+}
+
+.custom-cursor {
+  position: fixed;
+  width: 25px;
+  height: 25px;
+  border: 2px solid var(--white);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: width 0.2s, height 0.2s;
+  mix-blend-mode: difference;
+}
+
+.cursor-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 5px;
+  height: 5px;
+  background-color: var(--green);
+  border-radius: 50%;
+}
+
+.trail-segment {
+  position: fixed;
+  width: 15px;
+  height: 15px;
+  background-color: rgba(37, 211, 102, 0.3);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  mix-blend-mode: screen;
+}
+
+html, body {
+  cursor: none !important;
+}
+
+button, input, textarea, a, select, .sidebar-item, .send-button {
+  cursor: pointer !important;
+}
+
+@media (max-width: 768px) {
+  .custom-cursor, .trail-segment {
+    display: none;
+  }
+  
+  html, body {
+    cursor: auto !important;
+  }
+}
+
+.top-nav, .sidebar, .content-wrapper, .footer-text {
+  position: relative;
+  z-index: 1;
 }

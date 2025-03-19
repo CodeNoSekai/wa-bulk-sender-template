@@ -1,9 +1,142 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
+import { gsap } from 'gsap'; 
 import './MessageSender.css';
 
-const socket = io(); // defaults to current origin
+const CustomCursor = () => {
+  const [isMoving, setIsMoving] = useState(false);
+  const [isMouseDown, setIsMouseDown] = useState(false);
+  const cursorRef = useRef(null);
+  const trailRefs = useRef([]);
+  const trailLength = 10; // Adjust size here
+  const mousePosition = useRef({ x: -100, y: -100 });
+  const movementTimeout = useRef(null);
+  const animationFrameId = useRef(null);
+
+  useEffect(() => {
+    const segments = Array(trailLength)
+      .fill()
+      .map(() => React.createRef());
+    trailRefs.current = segments;
+    return () => {
+      trailRefs.current = [];
+    };
+  }, [trailLength]);
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      const { clientX: x, clientY: y } = e;
+      mousePosition.current = { x, y };
+
+      gsap.to(cursorRef.current, {
+        x,
+        y,
+        duration: 0.8,
+        ease: "power2.out"
+      });
+
+      setIsMoving(true);
+      if (movementTimeout.current) {
+        clearTimeout(movementTimeout.current);
+      }
+
+      movementTimeout.current = setTimeout(() => {
+        setIsMoving(false);
+      }, 500);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, [setIsMoving]);
+
+  const handleMouseDown = () => {
+    setIsMouseDown(true);
+    gsap.to(cursorRef.current, {
+      width: 50,
+      height: 50,
+      borderColor: "#25d366", // WhatsApp green
+      boxShadow: "0 0 25px rgba(37, 211, 102, 0.5)",
+      duration: 0.2,
+      ease: "power2.out"
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsMouseDown(false);
+    gsap.to(cursorRef.current, {
+      width: 25,
+      height: 25,
+      borderColor: "#ffffff",
+      boxShadow: "none",
+      duration: 0.2,
+      ease: "power2.out"
+    });
+  };
+
+  useEffect(() => {
+    const updateTrail = () => {
+      trailRefs.current.forEach((ref, index) => {
+        if (ref.current) {
+          const segment = ref.current;
+          const delay = (index + 1) * 0.05;
+
+          gsap.to(segment, {
+            x: mousePosition.current.x,
+            y: mousePosition.current.y,
+            duration: 0.3,
+            delay,
+            opacity: isMoving || isMouseDown ? 1 - index / trailLength : 0,
+            ease: "power2.out",
+            scale: 1 + index / trailLength,
+            boxShadow:
+              isMoving || isMouseDown
+                ? `0 0 10px rgba(37, 211, 102, ${0.2 + index / trailLength})`
+                : "none"
+          });
+        }
+      });
+    };
+
+    const animateTrail = () => {
+      updateTrail();
+      if (isMoving || isMouseDown) {
+        animationFrameId.current = requestAnimationFrame(animateTrail);
+      } else if (animationFrameId.current) {
+        cancelAnimationFrame(animationFrameId.current);
+      }
+    };
+
+    animateTrail();
+    return () => cancelAnimationFrame(animationFrameId.current);
+  }, [isMoving, isMouseDown]);
+
+  useEffect(() => {
+    window.addEventListener("mousedown", handleMouseDown);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousedown", handleMouseDown);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, []);
+
+  return (
+    <>
+      {trailRefs.current.map((ref, index) => (
+        <div key={index} className="trail-segment" ref={ref}></div>
+      ))}
+      <div className="custom-cursor" ref={cursorRef}>
+        <div className="cursor-dot" />
+      </div>
+    </>
+  );
+};
+
+const socket = io();
 
 const MessageSender = () => {
   const [numbersText, setNumbersText] = useState('');
@@ -16,21 +149,40 @@ const MessageSender = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const logsRef = useRef(null);
   const canvasRef = useRef(null);
+  const blobRef = useRef(null);
   
-  // Hydrated button params
   const [buttonText, setButtonText] = useState('View More');
   const [buttonUrl, setButtonUrl] = useState('https://www.google.com');
   const [messageTitle, setMessageTitle] = useState("Guru's Api");
   const [messageSubtitle, setMessageSubtitle] = useState('Subtitle Message');
   const [messageFooter, setMessageFooter] = useState('Guru Sensei');
 
-  // Canvas background animation with stars
+  useEffect(() => {
+    const blob = blobRef.current;
+    
+    const onPointerMove = (event) => {
+      const { clientX, clientY } = event;
+      
+      setTimeout(() => {
+        blob.animate({
+          left: `${clientX}px`,
+          top: `${clientY}px`
+        }, { duration: 2000, fill: "forwards" });
+      }, 100);
+    };
+    
+    window.addEventListener('pointermove', onPointerMove);
+    
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove);
+    };
+  }, []);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     let animationFrameId;
     
-    // Set canvas size
     const setCanvasSize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -39,12 +191,10 @@ const MessageSender = () => {
     window.addEventListener('resize', setCanvasSize);
     setCanvasSize();
     
-    // Star properties
     const stars = [];
     const maxStars = 150;
-    const maxDistance = 150; // Max distance to connect stars
+    const maxDistance = 150; 
     
-    // Create stars
     for (let i = 0; i < maxStars; i++) {
       stars.push({
         x: Math.random() * canvas.width,
@@ -55,28 +205,22 @@ const MessageSender = () => {
       });
     }
     
-    // Animation loop
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      // Draw stars and connect them
       ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
       ctx.beginPath();
       
       stars.forEach((star, i) => {
-        // Move the star
         star.x += star.vx;
         star.y += star.vy;
         
-        // Bounce when hitting the edge
         if (star.x < 0 || star.x > canvas.width) star.vx = -star.vx;
         if (star.y < 0 || star.y > canvas.height) star.vy = -star.vy;
         
-        // Draw the star
         ctx.moveTo(star.x, star.y);
         ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
         
-        // Connect with other stars
         for (let j = i + 1; j < stars.length; j++) {
           const otherStar = stars[j];
           const distance = Math.hypot(star.x - otherStar.x, star.y - otherStar.y);
@@ -98,7 +242,6 @@ const MessageSender = () => {
     
     animate();
     
-    // Cleanup
     return () => {
       window.cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', setCanvasSize);
@@ -106,12 +249,10 @@ const MessageSender = () => {
   }, []);
 
   useEffect(() => {
-    // Listen for status updates
     socket.on('status', (msg) => {
       setLogs(prev => [...prev, msg]);
     });
 
-    // Listen for real-time count updates
     socket.on('counts', (counts) => {
       setRealtimeStats(counts);
     });
@@ -122,7 +263,6 @@ const MessageSender = () => {
     };
   }, []);
 
-  // Auto-scroll logs to bottom when new logs are added
   useEffect(() => {
     if (logsRef.current) {
       logsRef.current.scrollTop = logsRef.current.scrollHeight;
@@ -148,7 +288,6 @@ const MessageSender = () => {
         messageFooter
       });
       
-      // Display the summary data returned from API
       if (response.data.summary) {
         setSummary(response.data.summary);
         setLogs(prev => [
@@ -160,7 +299,6 @@ const MessageSender = () => {
       }
     } catch (err) {
       setLogs(prev => [...prev, '❌ Send request failed']);
-      // If error response contains summary data, still show it
       if (err.response?.data?.summary) {
         setSummary(err.response.data.summary);
         setLogs(prev => [
@@ -271,6 +409,9 @@ const MessageSender = () => {
 
   return (
     <div className="app-container dark-theme">
+      {/* Custom cursor effect */}
+      <CustomCursor />
+      
       {/* Star background */}
       <canvas ref={canvasRef} className="star-background"></canvas>
       
@@ -284,7 +425,6 @@ const MessageSender = () => {
       </div>
       
       <div className="main-content">
-        {/* Sidebar - conditionally rendered */}
         {sidebarOpen && (
           <div className="sidebar glass-dark">
             <div 
@@ -311,13 +451,11 @@ const MessageSender = () => {
           </div>
         )}
         
-        {/* Content Area */}
         <div className={`content-wrapper ${!sidebarOpen ? 'full-width' : ''}`}>
           {activeTab === 'hydrated-button' && renderHydratedButtonSender()}
           {activeTab === 'simple-message' && <div className="content-area glass-dark"><h3>Simple Message Sender (Coming Soon)</h3></div>}
           {activeTab === 'settings' && <div className="content-area glass-dark"><h3>Settings (Coming Soon)</h3></div>}
           
-          {/* Real-time stats during sending */}
           {sending && realtimeStats && (
             <div className="summary-box realtime glass-dark">
               <h4>Live Progress</h4>
@@ -342,7 +480,6 @@ const MessageSender = () => {
             </div>
           )}
           
-          {/* Final summary after completion */}
           {!sending && summary && (
             <div className="summary-box glass-dark">
               <h4>Message Summary</h4>
