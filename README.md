@@ -3,7 +3,6 @@
 A clean and modern fullstack template for **WhatsApp bulk message sending**, built with **Node.js + Baileys + React + Socket.IO**.  
 Built by [Guru322](https://github.com/Guru322) — because risky code is fun, but scalable code is 🔥.
 
-
 ---
 
 ### ✨ Features
@@ -87,7 +86,7 @@ npm start
 
 ### 📸 UI Preview
 
-![250316_17h46m17s_screenshot](https://github.com/user-attachments/assets/127dfa1e-1131-4070-a3f3-81af1e35c64d)
+![image](https://github.com/user-attachments/assets/d0231094-b2cf-400b-ba06-fc943d107dba)
 
 ---
 
