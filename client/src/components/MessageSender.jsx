@@ -99,7 +99,7 @@ const MessageSender = () => {
 
   const renderHydratedButtonSender = () => {
     return (
-      <div className="content-area glass">
+      <div className="content-area glass-dark">
         <h3>Send Messages with Button</h3>
         
         <div className="input-group">
@@ -122,7 +122,7 @@ const MessageSender = () => {
           />
         </div>
         
-        <div className="button-settings glass-inner">
+        <div className="button-settings glass-darker">
           <h4>Button Settings</h4>
           <div className="form-row">
             <div className="input-group">
@@ -188,9 +188,9 @@ const MessageSender = () => {
   };
 
   return (
-    <div className="app-container">
-      {/* Top Navigation */}
-      <div className="top-nav glass">
+    <div className="app-container dark-theme">
+      {/* Top Navigation - Fixed */}
+      <div className="top-nav fixed-nav glass-nav">
         <button className="sidebar-toggle" onClick={toggleSidebar}>
           {sidebarOpen ? '◀' : '▶'}
         </button>
@@ -201,7 +201,7 @@ const MessageSender = () => {
       <div className="main-content">
         {/* Sidebar - conditionally rendered */}
         {sidebarOpen && (
-          <div className="sidebar glass">
+          <div className="sidebar glass-dark">
             <div 
               className={`sidebar-item ${activeTab === 'hydrated-button' ? 'active' : ''}`}
               onClick={() => setActiveTab('hydrated-button')}
@@ -229,12 +229,12 @@ const MessageSender = () => {
         {/* Content Area */}
         <div className={`content-wrapper ${!sidebarOpen ? 'full-width' : ''}`}>
           {activeTab === 'hydrated-button' && renderHydratedButtonSender()}
-          {activeTab === 'simple-message' && <div className="content-area glass"><h3>Simple Message Sender (Coming Soon)</h3></div>}
-          {activeTab === 'settings' && <div className="content-area glass"><h3>Settings (Coming Soon)</h3></div>}
+          {activeTab === 'simple-message' && <div className="content-area glass-dark"><h3>Simple Message Sender (Coming Soon)</h3></div>}
+          {activeTab === 'settings' && <div className="content-area glass-dark"><h3>Settings (Coming Soon)</h3></div>}
           
           {/* Real-time stats during sending */}
           {sending && realtimeStats && (
-            <div className="summary-box realtime glass">
+            <div className="summary-box realtime glass-dark">
               <h4>Live Progress</h4>
               <div className="summary-stats">
                 <div className="stat">
@@ -259,7 +259,7 @@ const MessageSender = () => {
           
           {/* Final summary after completion */}
           {!sending && summary && (
-            <div className="summary-box glass">
+            <div className="summary-box glass-dark">
               <h4>Message Summary</h4>
               <div className="summary-stats">
                 <div className="stat">
@@ -279,7 +279,7 @@ const MessageSender = () => {
           )}
           
           {/* Status Console */}
-          <div className="status-box glass-dark">
+          <div className="status-box glass-darker">
             <h4>Status Console</h4>
             <div className="logs" ref={logsRef}>
               {logs.map((log, i) => (

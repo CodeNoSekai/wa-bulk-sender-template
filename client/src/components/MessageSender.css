@@ -7,37 +7,41 @@
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   line-height: 1.6;
-  background: linear-gradient(135deg, #25d366, #128c7e);
-  background-attachment: fixed;
-  color: #333;
+  background: #121212; 
+  color: #e0e0e0; 
   min-height: 100vh;
 }
 
-/* Glass Effect Styles */
-.glass {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+
+.dark-theme {
+  background: linear-gradient(135deg, #1e1e2a, #0f0f14);
+  color: #e0e0e0;
+  min-height: 100vh;
 }
 
-.glass-inner {
-  background: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(7px);
-  -webkit-backdrop-filter: blur(7px);
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.glass-nav {
+  background: rgba(18, 18, 24, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .glass-dark {
-  background: rgba(30, 30, 36, 0.8);
+  background: rgba(30, 30, 40, 0.7);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-radius: 8px;
-  border: 1px solid rgba(66, 66, 66, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.glass-darker {
+  background: rgba(20, 20, 28, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .app-container {
@@ -47,37 +51,38 @@ body {
   overflow: hidden;
 }
 
-/* Top Navigation */
+.fixed-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 15px 20px;
+}
+
 .top-nav {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 15px 20px;
 }
 
 .top-nav h1 {
   margin: 0;
   font-size: 1.5rem;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   /* Center the title */
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
+  color: #25d366;
 }
 
 .nav-spacer {
-  width: 40px; /* Same width as sidebar toggle button */
+  width: 40px;
 }
 
-/* Sidebar Toggle */
 .sidebar-toggle {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(37, 211, 102, 0.3);
   border: none;
   border-radius: 50%;
   width: 40px;
@@ -88,51 +93,25 @@ body {
   cursor: pointer;
   font-size: 16px;
   transition: all 0.3s ease;
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
+  color: #fff;
 }
 
 .sidebar-toggle:hover {
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(37, 211, 102, 0.5);
   transform: scale(1.05);
 }
 
-/* Sidebar Animation */
-.sidebar {
-  transition: transform 0.3s ease, opacity 0.3s ease, width 0.3s ease;
-}
-
-/* Content area adjustments when sidebar is closed */
-.content-wrapper.full-width {
-  margin-left: 0;
-}
-
-/* Add this to your existing sidebar CSS */
-@media (max-width: 768px) {
-  .sidebar {
-    position: absolute;
-    z-index: 90;
-    height: calc(100vh - 70px);
-    transform: translateX(0);
-  }
-  
-  .sidebar:not(.visible) {
-    transform: translateX(-100%);
-  }
-}
-
-/* Main Content Layout */
 .main-content {
   display: flex;
   flex: 1;
-  height: calc(100vh - 120px); /* Account for header and footer */
+  padding-top: 70px;
+  height: calc(100vh - 50px);
 }
 
-/* Sidebar */
 .sidebar {
   width: 250px;
   padding: 20px 0;
-  will-change: transform; /* Optimize for animations */
+  will-change: transform;
   transform: translateZ(0); /* Force GPU acceleration */
   height: 100%;
   margin: 10px;
@@ -147,15 +126,16 @@ body {
   transition: all 0.2s ease;
   margin: 5px 10px;
   border-radius: 6px;
+  color: #e0e0e0;
 }
 
 .sidebar-item:hover {
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: rgba(37, 211, 102, 0.2);
   transform: translateX(5px);
 }
 
 .sidebar-item.active {
-  background-color: rgba(255, 255, 255, 0.5);
+  background-color: rgba(37, 211, 102, 0.3);
   border-left: 3px solid #25d366;
   transform: translateX(5px);
 }
@@ -165,14 +145,13 @@ body {
   font-size: 1.2rem;
 }
 
-/* Content Area */
 .content-wrapper {
   flex: 1;
   padding: 10px 20px;
   overflow-y: auto;
   height: 100%;
   scroll-behavior: smooth;
-  transform: translateZ(0); /* Force GPU acceleration */
+  transform: translateZ(0);
   will-change: transform; /* Optimize for animations */
   margin: 10px;
 }
@@ -198,12 +177,11 @@ body {
 
 .content-area h3 {
   margin-bottom: 20px;
-  color: #333;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  color: #25d366;
+  border-bottom: 1px solid rgba(37, 211, 102, 0.3);
   padding-bottom: 10px;
 }
 
-/* Form Elements */
 .input-group {
   margin-bottom: 15px;
 }
@@ -212,25 +190,27 @@ body {
   display: block;
   margin-bottom: 5px;
   font-weight: 500;
-  color: #333;
+  color: #ccc;
 }
 
 .input-group input,
 .input-group textarea {
   width: 100%;
   padding: 10px;
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(30, 30, 40, 0.8);
+  border: 1px solid rgba(37, 211, 102, 0.3);
   border-radius: 8px;
   font-size: 14px;
   transition: all 0.3s ease;
+  color: #e0e0e0;
 }
 
 .input-group input:focus,
 .input-group textarea:focus {
   outline: none;
   box-shadow: 0 0 0 2px rgba(37, 211, 102, 0.3);
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(40, 40, 50, 0.9);
+  border-color: #25d366;
 }
 
 .input-group textarea {
@@ -255,10 +235,9 @@ body {
 
 .button-settings h4 {
   margin-bottom: 15px;
-  color: #444;
+  color: #25d366;
 }
 
-/* Action Buttons */
 .send-button {
   background-color: #25d366;
   color: white;
@@ -286,13 +265,12 @@ body {
 }
 
 .send-button:disabled {
-  background-color: rgba(204, 204, 204, 0.7);
+  background-color: rgba(100, 100, 100, 0.7);
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
 
-/* Summary Box */
 .summary-box {
   padding: 15px;
   margin: 20px 0;
@@ -300,7 +278,7 @@ body {
 
 .summary-box h4 {
   margin-bottom: 15px;
-  color: #444;
+  color: #25d366;
   text-align: center;
 }
 
@@ -317,13 +295,14 @@ body {
 .stat-label {
   display: block;
   font-size: 0.9rem;
-  color: #444;
+  color: #ccc;
   margin-bottom: 5px;
 }
 
 .stat-value {
   font-size: 1.4rem;
   font-weight: bold;
+  color: #e0e0e0;
 }
 
 .stat-value.success {
@@ -336,7 +315,6 @@ body {
   text-shadow: 0 1px 2px rgba(220, 53, 69, 0.2);
 }
 
-/* Real-time Stats */
 .summary-box.realtime {
   animation: pulse 2s infinite;
 }
@@ -353,18 +331,17 @@ body {
   }
 }
 
-/* Status Console */
 .status-box {
   padding: 15px;
   margin-top: 20px;
-  color: #f0f0f0;
+  color: #e0e0e0;
 }
 
 .status-box h4 {
   margin-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(37, 211, 102, 0.3);
   padding-bottom: 8px;
-  color: rgba(255, 255, 255, 0.9);
+  color: #25d366;
 }
 
 .logs {
@@ -382,7 +359,7 @@ body {
 }
 
 .logs::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: rgba(37, 211, 102, 0.4);
   border-radius: 3px;
 }
 
@@ -400,10 +377,37 @@ body {
 .footer-text {
   text-align: center;
   padding: 15px;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.6);
   font-size: 14px;
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
-  margin-top: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: auto;
+  border-top: 1px solid rgba(37, 211, 102, 0.2);
+}
+
+.content-wrapper.full-width {
+  margin-left: 0;
+}
+
+.sidebar {
+  transition: transform 0.3s ease, opacity 0.3s ease, width 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    z-index: 90;
+    top: 70px;
+    left: 0;
+    height: calc(100vh - 70px);
+    transform: translateX(0);
+  }
+  
+  .sidebar:not(.visible) {
+    transform: translateX(-100%);
+  }
+  
+  .top-nav h1 {
+    font-size: 1.2rem;
+  }
 }
