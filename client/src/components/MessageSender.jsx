@@ -15,6 +15,7 @@ const MessageSender = () => {
   const [activeTab, setActiveTab] = useState('hydrated-button');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const logsRef = useRef(null);
+  const canvasRef = useRef(null);
   
   // Hydrated button params
   const [buttonText, setButtonText] = useState('View More');
@@ -22,6 +23,87 @@ const MessageSender = () => {
   const [messageTitle, setMessageTitle] = useState("Guru's Api");
   const [messageSubtitle, setMessageSubtitle] = useState('Subtitle Message');
   const [messageFooter, setMessageFooter] = useState('Guru Sensei');
+
+  // Canvas background animation with stars
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    let animationFrameId;
+    
+    // Set canvas size
+    const setCanvasSize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    
+    window.addEventListener('resize', setCanvasSize);
+    setCanvasSize();
+    
+    // Star properties
+    const stars = [];
+    const maxStars = 150;
+    const maxDistance = 150; // Max distance to connect stars
+    
+    // Create stars
+    for (let i = 0; i < maxStars; i++) {
+      stars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        radius: Math.random() * 1.5 + 0.5,
+        vx: (Math.random() - 0.5) * 0.1,
+        vy: (Math.random() - 0.5) * 0.1
+      });
+    }
+    
+    // Animation loop
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw stars and connect them
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.beginPath();
+      
+      stars.forEach((star, i) => {
+        // Move the star
+        star.x += star.vx;
+        star.y += star.vy;
+        
+        // Bounce when hitting the edge
+        if (star.x < 0 || star.x > canvas.width) star.vx = -star.vx;
+        if (star.y < 0 || star.y > canvas.height) star.vy = -star.vy;
+        
+        // Draw the star
+        ctx.moveTo(star.x, star.y);
+        ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+        
+        // Connect with other stars
+        for (let j = i + 1; j < stars.length; j++) {
+          const otherStar = stars[j];
+          const distance = Math.hypot(star.x - otherStar.x, star.y - otherStar.y);
+          
+          if (distance < maxDistance) {
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(255, 255, 255, ${(1 - distance/maxDistance) * 0.3})`;
+            ctx.lineWidth = 0.5;
+            ctx.moveTo(star.x, star.y);
+            ctx.lineTo(otherStar.x, otherStar.y);
+            ctx.stroke();
+          }
+        }
+      });
+      
+      ctx.fill();
+      animationFrameId = window.requestAnimationFrame(animate);
+    };
+    
+    animate();
+    
+    // Cleanup
+    return () => {
+      window.cancelAnimationFrame(animationFrameId);
+      window.removeEventListener('resize', setCanvasSize);
+    };
+  }, []);
 
   useEffect(() => {
     // Listen for status updates
@@ -189,6 +271,9 @@ const MessageSender = () => {
 
   return (
     <div className="app-container dark-theme">
+      {/* Star background */}
+      <canvas ref={canvasRef} className="star-background"></canvas>
+      
       {/* Top Navigation - Fixed */}
       <div className="top-nav fixed-nav glass-nav">
         <button className="sidebar-toggle" onClick={toggleSidebar}>
