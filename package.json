@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "server": "nodemon index.js",
-    "build": "cd client && npm install && npm run build",
+    "build": "npm install && cd client && npm install && npm run build",
     "dev": "concurrently \"npm run server\" \"npm run client\""
   },
   "dependencies": {
