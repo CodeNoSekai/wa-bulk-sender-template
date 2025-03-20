@@ -104,7 +104,8 @@ router.post('/send-messages', async (req, res) => {
     buttonUrl = "https://www.google.com",
     messageTitle = "Guru's Api",
     messageSubtitle = "Subtitle Message",
-    messageFooter = "Guru Sensei"
+    messageFooter = "Guru Sensei",
+    mediaUrl = "" // Add this line to accept media URL
   } = req.body;
   
   const io = req.app.get('io');
@@ -142,24 +143,47 @@ router.post('/send-messages', async (req, res) => {
   try {
     for (let jid of jids) {
       try {
-        await client.sendMessage(
-          jid,
-          {
-              text: message,
-              title: messageTitle,
-              subtitle: messageSubtitle,
-              footer: messageFooter,
-              interactiveButtons: [
-                   {
-                      name: "cta_url",
-                      buttonParamsJson: JSON.stringify({
-                           display_text: buttonText,
-                           url: buttonUrl
-                      })
-                   }
-              ]
-          }
-        )
+        // Create message object based on whether mediaUrl is provided
+        let messageObject = {
+          text: message,
+          title: messageTitle,
+          subtitle: messageSubtitle,
+          footer: messageFooter,
+          interactiveButtons: [
+            {
+              name: "cta_url",
+              buttonParamsJson: JSON.stringify({
+                display_text: buttonText,
+                url: buttonUrl
+              })
+            }
+          ]
+        };
+
+        // If mediaUrl is provided, convert to media message
+        if (mediaUrl && mediaUrl.trim() !== '') {
+          // Replace text with caption
+          messageObject = {
+            image: { url: mediaUrl },
+            caption: message,
+            title: messageTitle,
+            subtitle: messageSubtitle,
+            footer: messageFooter,
+            media: true,
+            interactiveButtons: [
+              {
+                name: "cta_url",
+                buttonParamsJson: JSON.stringify({
+                  display_text: buttonText,
+                  url: buttonUrl
+                })
+              }
+            ]
+          };
+          io.emit('status', `📷 Sending media message to ${jid}...`);
+        }
+
+        await client.sendMessage(jid, messageObject);
         successCount++;
         io.emit('status', `✅ Message sent to ${jid}`);
         io.emit('counts', { total: jids.length, successful: successCount, failed: failureCount });
@@ -172,6 +196,71 @@ router.post('/send-messages', async (req, res) => {
     }
 
     io.emit('status', `✅ All messages processed. Successful: ${successCount}, Failed: ${failureCount}`);
+    return res.json({ 
+      status: 'Sending completed', 
+      summary: {
+        total: jids.length,
+        successful: successCount,
+        failed: failureCount
+      }
+    });
+  } catch (err) {
+    io.emit('status', `❌ Sending failed: ${err.message}. Successful: ${successCount}, Failed: ${failureCount}`);
+    return res.status(500).json({ 
+      error: 'Sending error',
+      summary: {
+        total: jids.length,
+        successful: successCount,
+        failed: failureCount
+      }
+    });
+  }
+});
+
+router.post('/send-simple-messages', async (req, res) => {
+  const { 
+    numbersText, 
+    message
+  } = req.body;
+  
+  const io = req.app.get('io');
+
+  if (!numbersText || !message) {
+    return res.status(400).json({ error: 'Missing numbersText or message' });
+  }
+
+  if (!client || !isConnected) {
+    return res.status(500).json({ error: 'Socket is not connected. Please pair first.' });
+  }
+
+  const lines = numbersText.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  const jids = lines.map(num => `${num}@s.whatsapp.net`);
+
+  io.emit('status', `📤 Sending simple messages to ${jids.length} numbers.`);
+  io.emit('counts', { total: jids.length, successful: 0, failed: 0 });
+
+  let successCount = 0;
+  let failureCount = 0;
+
+  try {
+    for (let jid of jids) {
+      try {
+        await client.sendMessage(
+          jid,
+          { text: message }
+        );
+        successCount++;
+        io.emit('status', `✅ Simple message sent to ${jid}`);
+        io.emit('counts', { total: jids.length, successful: successCount, failed: failureCount });
+      } catch (err) {
+        failureCount++;
+        io.emit('status', `❌ Failed to send to ${jid}: ${err.message}`);
+        io.emit('counts', { total: jids.length, successful: successCount, failed: failureCount });
+      }
+      await delay(30000);
+    }
+
+    io.emit('status', `✅ All simple messages processed. Successful: ${successCount}, Failed: ${failureCount}`);
     return res.json({ 
       status: 'Sending completed', 
       summary: {

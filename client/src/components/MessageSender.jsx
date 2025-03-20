@@ -156,6 +156,7 @@ const MessageSender = () => {
   const [messageTitle, setMessageTitle] = useState("Guru's Api");
   const [messageSubtitle, setMessageSubtitle] = useState('Subtitle Message');
   const [messageFooter, setMessageFooter] = useState('Guru Sensei');
+  const [mediaUrl, setMediaUrl] = useState('');
 
   useEffect(() => {
     const blob = blobRef.current;
@@ -269,24 +270,36 @@ const MessageSender = () => {
     }
   }, [logs]);
 
+  // Replace the handleSend function with this version that handles both types
   const handleSend = async () => {
     if (!numbersText || !message) return alert('Enter both numbers and message');
-
+  
     setSending(true);
     setLogs(['🚀 Sending initiated...']);
     setSummary(null);
     setRealtimeStats(null);
-
+  
     try {
-      const response = await axios.post('/pair/send-messages', { 
-        numbersText, 
-        message,
-        buttonText,
-        buttonUrl,
-        messageTitle,
-        messageSubtitle,
-        messageFooter
-      });
+      // Use different endpoints based on the active tab
+      const endpoint = activeTab === 'simple-message' 
+        ? '/pair/send-simple-messages' 
+        : '/pair/send-messages';
+      
+      // Create the appropriate request body based on message type
+      const requestBody = activeTab === 'simple-message'
+        ? { numbersText, message }
+        : { 
+            numbersText, 
+            message,
+            buttonText,
+            buttonUrl,
+            messageTitle,
+            messageSubtitle,
+            messageFooter,
+            mediaUrl // Include the mediaUrl in the request
+          };
+      
+      const response = await axios.post(endpoint, requestBody);
       
       if (response.data.summary) {
         setSummary(response.data.summary);
@@ -309,7 +322,7 @@ const MessageSender = () => {
         ]);
       }
     }
-
+  
     setSending(false);
   };
 
@@ -320,7 +333,7 @@ const MessageSender = () => {
   const renderHydratedButtonSender = () => {
     return (
       <div className="content-area glass-dark">
-        <h3>Send Messages with Button</h3>
+        <h3>Send Interactive Messages</h3>
         
         <div className="input-group">
           <label>Phone Numbers (one per line)</label>
@@ -336,63 +349,88 @@ const MessageSender = () => {
           <label>Message</label>
           <textarea
             placeholder="Your message here..."
-            rows="4"
+            rows="6"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
           />
         </div>
         
+        {/* Add media URL input */}
+        <div className="input-group">
+          <label>Media URL (Optional)</label>
+          <div className="media-input-container">
+            <input
+              type="text"
+              placeholder="https://example.com/image.jpg"
+              value={mediaUrl}
+              onChange={(e) => setMediaUrl(e.target.value)}
+            />
+            {mediaUrl && (
+              <div className="media-preview">
+                <img 
+                  src={mediaUrl} 
+                  alt="Preview" 
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = 'https://via.placeholder.com/100x100?text=Invalid+URL';
+                  }}
+                />
+              </div>
+            )}
+          </div>
+          <small className="input-note">Enter a direct URL to an image (JPG, PNG, etc.)</small>
+        </div>
+        
         <div className="button-settings glass-darker">
-          <h4>Button Settings</h4>
+          <h4>Interactive Message Settings</h4>
+          <div className="form-row">
+            <div className="input-group">
+              <label>Message Title</label>
+              <input
+                type="text"
+                value={messageTitle}
+                onChange={(e) => setMessageTitle(e.target.value)}
+                placeholder="Message Title"
+              />
+            </div>
+            <div className="input-group">
+              <label>Message Subtitle</label>
+              <input
+                type="text"
+                value={messageSubtitle}
+                onChange={(e) => setMessageSubtitle(e.target.value)}
+                placeholder="Message Subtitle"
+              />
+            </div>
+          </div>
           <div className="form-row">
             <div className="input-group">
               <label>Button Text</label>
-              <input 
-                type="text" 
-                value={buttonText} 
+              <input
+                type="text"
+                value={buttonText}
                 onChange={(e) => setButtonText(e.target.value)}
                 placeholder="Button Text"
               />
             </div>
             <div className="input-group">
-              <label>URL</label>
-              <input 
-                type="text" 
-                value={buttonUrl} 
+              <label>Button URL</label>
+              <input
+                type="text"
+                value={buttonUrl}
                 onChange={(e) => setButtonUrl(e.target.value)}
                 placeholder="https://example.com"
               />
             </div>
           </div>
-          
-          <h4>Message Settings</h4>
-          <div className="form-row">
-            <div className="input-group">
-              <label>Title</label>
-              <input 
-                type="text" 
-                value={messageTitle} 
-                onChange={(e) => setMessageTitle(e.target.value)}
-              />
-            </div>
-            <div className="input-group">
-              <label>Subtitle</label>
-              <input 
-                type="text" 
-                value={messageSubtitle} 
-                onChange={(e) => setMessageSubtitle(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="form-row">
-            <div className="input-group">
-              <label>Footer</label>
-              <input 
-                type="text" 
-                value={messageFooter} 
-                onChange={(e) => setMessageFooter(e.target.value)}
-              />
-            </div>
+          <div className="input-group">
+            <label>Message Footer</label>
+            <input
+              type="text"
+              value={messageFooter}
+              onChange={(e) => setMessageFooter(e.target.value)}
+              placeholder="Message Footer"
+            />
           </div>
         </div>
         
@@ -401,8 +439,52 @@ const MessageSender = () => {
           onClick={handleSend} 
           disabled={sending}
         >
-          {sending ? 'Sending...' : 'Send Messages'}
+          {sending ? 'Sending...' : 'Send Interactive Messages'}
         </button>
+      </div>
+    );
+  };
+
+  // Add this function to render the simple message sender
+  const renderSimpleMessageSender = () => {
+    return (
+      <div className="content-area glass-dark">
+        <h3>Send Simple Text Messages</h3>
+        
+        <div className="input-group">
+          <label>Phone Numbers (one per line)</label>
+          <textarea
+            placeholder="Enter phone numbers here..."
+            rows="5"
+            value={numbersText}
+            onChange={(e) => setNumbersText(e.target.value)}
+          />
+        </div>
+        
+        <div className="input-group">
+          <label>Message</label>
+          <textarea
+            placeholder="Your message here..."
+            rows="6"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+          />
+        </div>
+        
+        <button 
+          className="send-button" 
+          onClick={handleSend} 
+          disabled={sending}
+        >
+          {sending ? 'Sending...' : 'Send Simple Messages'}
+        </button>
+        
+        <div className="glass-darker" style={{padding: '15px', marginTop: '20px'}}>
+          <p style={{fontSize: '14px', color: '#ccc'}}>
+            <strong>Note:</strong> Simple text messages are sent without buttons, titles, or other formatting elements.
+            They're perfect for sending straightforward information that doesn't require interactive elements.
+          </p>
+        </div>
       </div>
     );
   };
@@ -453,7 +535,7 @@ const MessageSender = () => {
         
         <div className={`content-wrapper ${!sidebarOpen ? 'full-width' : ''}`}>
           {activeTab === 'hydrated-button' && renderHydratedButtonSender()}
-          {activeTab === 'simple-message' && <div className="content-area glass-dark"><h3>Simple Message Sender (Coming Soon)</h3></div>}
+          {activeTab === 'simple-message' && renderSimpleMessageSender()}
           {activeTab === 'settings' && <div className="content-area glass-dark"><h3>Settings (Coming Soon)</h3></div>}
           
           {sending && realtimeStats && (
