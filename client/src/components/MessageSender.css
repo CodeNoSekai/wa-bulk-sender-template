@@ -528,7 +528,25 @@ button, input, textarea, a, select, .sidebar-item, .send-button {
   margin-top: 5px;
 }
 
-/* Make sure the input accommodates the preview */
 .media-input-container input {
   padding-right: 70px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  margin-top: 10px;
+}
+
+.checkbox-label input[type="checkbox"] {
+  margin-right: 8px;
+  width: 18px;
+  height: 18px;
+  accent-color: #25d366;
+}
+
+.checkbox-label span {
+  font-size: 15px;
 }
