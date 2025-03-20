@@ -451,21 +451,28 @@ body {
   transform: translate(-50%, -50%);
   width: 5px;
   height: 5px;
-  background-color: var(--green);
+  background-color: var(--black);
   border-radius: 50%;
 }
 
 .trail-segment {
   position: fixed;
-  width: 15px;
-  height: 15px;
-  background-color: rgba(37, 211, 102, 0.3);
-  border-radius: 50%;
   pointer-events: none;
   z-index: 9998;
   opacity: 0;
   transform: translate(-50%, -50%);
   mix-blend-mode: screen;
+  font-size: 12px;
+  color: rgba(218, 229, 230, 0.993);
+  text-shadow: 0 0 4px rgba(255, 255, 255, 0.7);
+  content: "🗿";
+}
+
+.trail-segment::before {
+  content: "🗿";
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 html, body {
