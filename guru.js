@@ -54,7 +54,7 @@ async function initSocket(number = '') {
       if (!reason.includes('logged out')) {
         console.log('🔁 Reinitializing socket in 5s...');
         await delay(5000);
-        initSocket(); // Rebuild socket
+        initSocket();
       }
     }
   });
@@ -82,7 +82,6 @@ router.get('/', async (req, res) => {
       return res.json({ message: 'Already paired' });
     }
 
-    // Client exists, check registered
     if (!client.authState.creds.registered) {
       const code = await client.requestPairingCode(number.replace(/[^0-9]/g, ''));
       console.log('🔐 Pairing Code:', code);
@@ -104,7 +103,8 @@ router.post('/send-messages', async (req, res) => {
     buttonUrl = "https://www.google.com",
     messageTitle = "Guru's Api",
     messageSubtitle = "Subtitle Message",
-    messageFooter = "Guru Sensei"
+    messageFooter = "Guru Sensei",
+    mediaUrl = ""
   } = req.body;
   
   const io = req.app.get('io');
@@ -142,24 +142,44 @@ router.post('/send-messages', async (req, res) => {
   try {
     for (let jid of jids) {
       try {
-        await client.sendMessage(
-          jid,
-          {
-              text: message,
-              title: messageTitle,
-              subtitle: messageSubtitle,
-              footer: messageFooter,
-              interactiveButtons: [
-                   {
-                      name: "cta_url",
-                      buttonParamsJson: JSON.stringify({
-                           display_text: buttonText,
-                           url: buttonUrl
-                      })
-                   }
-              ]
-          }
-        )
+        let messageObject = {
+          text: message,
+          title: messageTitle,
+          subtitle: messageSubtitle,
+          footer: messageFooter,
+          interactiveButtons: [
+            {
+              name: "cta_url",
+              buttonParamsJson: JSON.stringify({
+                display_text: buttonText,
+                url: buttonUrl
+              })
+            }
+          ]
+        };
+
+        if (mediaUrl && mediaUrl.trim() !== '') {
+          messageObject = {
+            image: { url: mediaUrl },
+            caption: message,
+            title: messageTitle,
+            subtitle: messageSubtitle,
+            footer: messageFooter,
+            media: true,
+            interactiveButtons: [
+              {
+                name: "cta_url",
+                buttonParamsJson: JSON.stringify({
+                  display_text: buttonText,
+                  url: buttonUrl
+                })
+              }
+            ]
+          };
+          io.emit('status', `📷 Sending media message to ${jid}...`);
+        }
+
+        await client.sendMessage(jid, messageObject);
         successCount++;
         io.emit('status', `✅ Message sent to ${jid}`);
         io.emit('counts', { total: jids.length, successful: successCount, failed: failureCount });
@@ -184,6 +204,154 @@ router.post('/send-messages', async (req, res) => {
     io.emit('status', `❌ Sending failed: ${err.message}. Successful: ${successCount}, Failed: ${failureCount}`);
     return res.status(500).json({ 
       error: 'Sending error',
+      summary: {
+        total: jids.length,
+        successful: successCount,
+        failed: failureCount
+      }
+    });
+  }
+});
+
+router.post('/send-simple-messages', async (req, res) => {
+  const { 
+    numbersText, 
+    message
+  } = req.body;
+  
+  const io = req.app.get('io');
+
+  if (!numbersText || !message) {
+    return res.status(400).json({ error: 'Missing numbersText or message' });
+  }
+
+  if (!client || !isConnected) {
+    return res.status(500).json({ error: 'Socket is not connected. Please pair first.' });
+  }
+
+  const lines = numbersText.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  const jids = lines.map(num => `${num}@s.whatsapp.net`);
+
+  io.emit('status', `📤 Sending simple messages to ${jids.length} numbers.`);
+  io.emit('counts', { total: jids.length, successful: 0, failed: 0 });
+
+  let successCount = 0;
+  let failureCount = 0;
+
+  try {
+    for (let jid of jids) {
+      try {
+        await client.sendMessage(
+          jid,
+          { text: message }
+        );
+        successCount++;
+        io.emit('status', `✅ Simple message sent to ${jid}`);
+        io.emit('counts', { total: jids.length, successful: successCount, failed: failureCount });
+      } catch (err) {
+        failureCount++;
+        io.emit('status', `❌ Failed to send to ${jid}: ${err.message}`);
+        io.emit('counts', { total: jids.length, successful: successCount, failed: failureCount });
+      }
+      await delay(30000);
+    }
+
+    io.emit('status', `✅ All simple messages processed. Successful: ${successCount}, Failed: ${failureCount}`);
+    return res.json({ 
+      status: 'Sending completed', 
+      summary: {
+        total: jids.length,
+        successful: successCount,
+        failed: failureCount
+      }
+    });
+  } catch (err) {
+    io.emit('status', `❌ Sending failed: ${err.message}. Successful: ${successCount}, Failed: ${failureCount}`);
+    return res.status(500).json({ 
+      error: 'Sending error',
+      summary: {
+        total: jids.length,
+        successful: successCount,
+        failed: failureCount
+      }
+    });
+  }
+});
+
+router.post('/send-shop-messages', async (req, res) => {
+  const { 
+    numbersText, 
+    message,
+    messageTitle = "Shop Title",
+    messageSubtitle = "Shop Subtitle",
+    messageFooter = "Shop Footer",
+    mediaUrl = "",
+    shopName = "WA",
+    shopId = "default_shop_id",
+    viewOnce = true
+  } = req.body;
+  
+  const io = req.app.get('io');
+
+  if (!numbersText || !message || !mediaUrl) {
+    return res.status(400).json({ error: 'Missing required fields (numbersText, message, mediaUrl)' });
+  }
+
+  if (!client || !isConnected) {
+    return res.status(500).json({ error: 'Socket is not connected. Please pair first.' });
+  }
+
+  const lines = numbersText.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  const jids = lines.map(num => `${num}@s.whatsapp.net`);
+
+  io.emit('status', `🛍️ Shop message sending started to ${jids.length} numbers.`);
+  io.emit('counts', { total: jids.length, successful: 0, failed: 0 });
+
+  let successCount = 0;
+  let failureCount = 0;
+
+  try {
+    for (let jid of jids) {
+      try {
+        const shopMessageObject = {
+          image: { url: mediaUrl },
+          caption: message,
+          title: messageTitle,
+          subtitle: messageSubtitle,
+          footer: messageFooter,
+          media: true,
+          viewOnce: viewOnce,
+          shop: shopName,
+          id: shopId
+        };
+
+        io.emit('status', `🛍️ Sending shop message to ${jid}...`);
+        await client.sendMessage(jid, shopMessageObject);
+        
+        successCount++;
+        io.emit('status', `✅ Shop message sent to ${jid}`);
+        io.emit('counts', { total: jids.length, successful: successCount, failed: failureCount });
+      } catch (err) {
+        failureCount++;
+        io.emit('status', `❌ Failed to send shop message to ${jid}: ${err.message}`);
+        io.emit('counts', { total: jids.length, successful: successCount, failed: failureCount });
+      }
+      await delay(30000); 
+    }
+
+    io.emit('status', `✅ All shop messages processed. Successful: ${successCount}, Failed: ${failureCount}`);
+    return res.json({ 
+      status: 'Shop message sending completed', 
+      summary: {
+        total: jids.length,
+        successful: successCount,
+        failed: failureCount
+      }
+    });
+  } catch (err) {
+    io.emit('status', `❌ Shop message sending failed: ${err.message}. Successful: ${successCount}, Failed: ${failureCount}`);
+    return res.status(500).json({ 
+      error: 'Shop message sending error',
       summary: {
         total: jids.length,
         successful: successCount,

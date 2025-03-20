@@ -9,7 +9,7 @@ const CustomCursor = () => {
   const [isMouseDown, setIsMouseDown] = useState(false);
   const cursorRef = useRef(null);
   const trailRefs = useRef([]);
-  const trailLength = 10; // Adjust size here
+  const trailLength = 10; 
   const mousePosition = useRef({ x: -100, y: -100 });
   const movementTimeout = useRef(null);
   const animationFrameId = useRef(null);
@@ -58,7 +58,7 @@ const CustomCursor = () => {
     gsap.to(cursorRef.current, {
       width: 50,
       height: 50,
-      borderColor: "#25d366", // WhatsApp green
+      borderColor: "#25d366", 
       boxShadow: "0 0 25px rgba(37, 211, 102, 0.5)",
       duration: 0.2,
       ease: "power2.out"
@@ -156,6 +156,11 @@ const MessageSender = () => {
   const [messageTitle, setMessageTitle] = useState("Guru's Api");
   const [messageSubtitle, setMessageSubtitle] = useState('Subtitle Message');
   const [messageFooter, setMessageFooter] = useState('Guru Sensei');
+  const [mediaUrl, setMediaUrl] = useState('');
+
+  const [shopName, setShopName] = useState('WA');
+  const [shopId, setShopId] = useState('default_shop_id');
+  const [viewOnce, setViewOnce] = useState(true);
 
   useEffect(() => {
     const blob = blobRef.current;
@@ -271,22 +276,31 @@ const MessageSender = () => {
 
   const handleSend = async () => {
     if (!numbersText || !message) return alert('Enter both numbers and message');
-
+  
     setSending(true);
     setLogs(['🚀 Sending initiated...']);
     setSummary(null);
     setRealtimeStats(null);
-
+  
     try {
-      const response = await axios.post('/pair/send-messages', { 
-        numbersText, 
-        message,
-        buttonText,
-        buttonUrl,
-        messageTitle,
-        messageSubtitle,
-        messageFooter
-      });
+      const endpoint = activeTab === 'simple-message' 
+        ? '/pair/send-simple-messages' 
+        : '/pair/send-messages';
+      
+      const requestBody = activeTab === 'simple-message'
+        ? { numbersText, message }
+        : { 
+            numbersText, 
+            message,
+            buttonText,
+            buttonUrl,
+            messageTitle,
+            messageSubtitle,
+            messageFooter,
+            mediaUrl 
+          };
+      
+      const response = await axios.post(endpoint, requestBody);
       
       if (response.data.summary) {
         setSummary(response.data.summary);
@@ -309,7 +323,56 @@ const MessageSender = () => {
         ]);
       }
     }
+  
+    setSending(false);
+  };
 
+  const handleSendShopMessage = async () => {
+    if (!numbersText || !message || !mediaUrl) {
+      alert('Please provide phone numbers, message, and a media URL');
+      return;
+    }
+  
+    setSending(true);
+    setLogs(['🛍️ Preparing to send shop messages...']);
+    setSummary(null);
+    setRealtimeStats(null);
+  
+    try {
+      const response = await axios.post('/pair/send-shop-messages', {
+        numbersText,
+        message,
+        mediaUrl,
+        messageTitle,
+        messageSubtitle,
+        messageFooter,
+        shopName,
+        shopId,
+        viewOnce
+      });
+      
+      if (response.data.summary) {
+        setSummary(response.data.summary);
+        setLogs(prev => [
+          ...prev, 
+          `📊 Summary: Total: ${response.data.summary.total}, ` +
+          `Successful: ${response.data.summary.successful}, ` +
+          `Failed: ${response.data.summary.failed}`
+        ]);
+      }
+    } catch (err) {
+      setLogs(prev => [...prev, '❌ Shop message send request failed']);
+      if (err.response?.data?.summary) {
+        setSummary(err.response.data.summary);
+        setLogs(prev => [
+          ...prev, 
+          `📊 Summary: Total: ${err.response.data.summary.total}, ` +
+          `Successful: ${err.response.data.summary.successful}, ` +
+          `Failed: ${err.response.data.summary.failed}`
+        ]);
+      }
+    }
+  
     setSending(false);
   };
 
@@ -320,7 +383,7 @@ const MessageSender = () => {
   const renderHydratedButtonSender = () => {
     return (
       <div className="content-area glass-dark">
-        <h3>Send Messages with Button</h3>
+        <h3>Send Interactive Messages</h3>
         
         <div className="input-group">
           <label>Phone Numbers (one per line)</label>
@@ -336,63 +399,87 @@ const MessageSender = () => {
           <label>Message</label>
           <textarea
             placeholder="Your message here..."
-            rows="4"
+            rows="6"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
           />
         </div>
         
+        <div className="input-group">
+          <label>Media URL (Optional)</label>
+          <div className="media-input-container">
+            <input
+              type="text"
+              placeholder="https://example.com/image.jpg"
+              value={mediaUrl}
+              onChange={(e) => setMediaUrl(e.target.value)}
+            />
+            {mediaUrl && (
+              <div className="media-preview">
+                <img 
+                  src={mediaUrl} 
+                  alt="Preview" 
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = 'https://via.placeholder.com/100x100?text=Invalid+URL';
+                  }}
+                />
+              </div>
+            )}
+          </div>
+          <small className="input-note">Enter a direct URL to an image (JPG, PNG, etc.)</small>
+        </div>
+        
         <div className="button-settings glass-darker">
-          <h4>Button Settings</h4>
+          <h4>Interactive Message Settings</h4>
+          <div className="form-row">
+            <div className="input-group">
+              <label>Message Title</label>
+              <input
+                type="text"
+                value={messageTitle}
+                onChange={(e) => setMessageTitle(e.target.value)}
+                placeholder="Message Title"
+              />
+            </div>
+            <div className="input-group">
+              <label>Message Subtitle</label>
+              <input
+                type="text"
+                value={messageSubtitle}
+                onChange={(e) => setMessageSubtitle(e.target.value)}
+                placeholder="Message Subtitle"
+              />
+            </div>
+          </div>
           <div className="form-row">
             <div className="input-group">
               <label>Button Text</label>
-              <input 
-                type="text" 
-                value={buttonText} 
+              <input
+                type="text"
+                value={buttonText}
                 onChange={(e) => setButtonText(e.target.value)}
                 placeholder="Button Text"
               />
             </div>
             <div className="input-group">
-              <label>URL</label>
-              <input 
-                type="text" 
-                value={buttonUrl} 
+              <label>Button URL</label>
+              <input
+                type="text"
+                value={buttonUrl}
                 onChange={(e) => setButtonUrl(e.target.value)}
                 placeholder="https://example.com"
               />
             </div>
           </div>
-          
-          <h4>Message Settings</h4>
-          <div className="form-row">
-            <div className="input-group">
-              <label>Title</label>
-              <input 
-                type="text" 
-                value={messageTitle} 
-                onChange={(e) => setMessageTitle(e.target.value)}
-              />
-            </div>
-            <div className="input-group">
-              <label>Subtitle</label>
-              <input 
-                type="text" 
-                value={messageSubtitle} 
-                onChange={(e) => setMessageSubtitle(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="form-row">
-            <div className="input-group">
-              <label>Footer</label>
-              <input 
-                type="text" 
-                value={messageFooter} 
-                onChange={(e) => setMessageFooter(e.target.value)}
-              />
-            </div>
+          <div className="input-group">
+            <label>Message Footer</label>
+            <input
+              type="text"
+              value={messageFooter}
+              onChange={(e) => setMessageFooter(e.target.value)}
+              placeholder="Message Footer"
+            />
           </div>
         </div>
         
@@ -401,21 +488,193 @@ const MessageSender = () => {
           onClick={handleSend} 
           disabled={sending}
         >
-          {sending ? 'Sending...' : 'Send Messages'}
+          {sending ? 'Sending...' : 'Send Interactive Messages'}
         </button>
+      </div>
+    );
+  };
+
+  const renderSimpleMessageSender = () => {
+    return (
+      <div className="content-area glass-dark">
+        <h3>Send Simple Text Messages</h3>
+        
+        <div className="input-group">
+          <label>Phone Numbers (one per line)</label>
+          <textarea
+            placeholder="Enter phone numbers here..."
+            rows="5"
+            value={numbersText}
+            onChange={(e) => setNumbersText(e.target.value)}
+          />
+        </div>
+        
+        <div className="input-group">
+          <label>Message</label>
+          <textarea
+            placeholder="Your message here..."
+            rows="6"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+          />
+        </div>
+        
+        <button 
+          className="send-button" 
+          onClick={handleSend} 
+          disabled={sending}
+        >
+          {sending ? 'Sending...' : 'Send Simple Messages'}
+        </button>
+        
+        <div className="glass-darker" style={{padding: '15px', marginTop: '20px'}}>
+          <p style={{fontSize: '14px', color: '#ccc'}}>
+            <strong>Note:</strong> Simple text messages are sent without buttons, titles, or other formatting elements.
+            They're perfect for sending straightforward information that doesn't require interactive elements.
+          </p>
+        </div>
+      </div>
+    );
+  };
+
+  const renderShopMessageSender = () => {
+    return (
+      <div className="content-area glass-dark">
+        <h3>Send Shop Messages</h3>
+        
+        <div className="input-group">
+          <label>Phone Numbers (one per line)</label>
+          <textarea
+            placeholder="Enter phone numbers here..."
+            rows="5"
+            value={numbersText}
+            onChange={(e) => setNumbersText(e.target.value)}
+          />
+        </div>
+        
+        <div className="input-group">
+          <label>Message Caption</label>
+          <textarea
+            placeholder="Your caption here..."
+            rows="4"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+          />
+        </div>
+        
+        <div className="input-group">
+          <label>Media URL (Required)</label>
+          <div className="media-input-container">
+            <input
+              type="text"
+              placeholder="https://example.com/image.jpg"
+              value={mediaUrl}
+              onChange={(e) => setMediaUrl(e.target.value)}
+              required
+            />
+            {mediaUrl && (
+              <div className="media-preview">
+                <img 
+                  src={mediaUrl} 
+                  alt="Preview" 
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = 'https://via.placeholder.com/100x100?text=Invalid+URL';
+                  }}
+                />
+              </div>
+            )}
+          </div>
+          <small className="input-note">A direct image URL is required for shop messages</small>
+        </div>
+        
+        <div className="button-settings glass-darker">
+          <h4>Shop Message Settings</h4>
+          <div className="form-row">
+            <div className="input-group">
+              <label>Message Title</label>
+              <input
+                type="text"
+                value={messageTitle}
+                onChange={(e) => setMessageTitle(e.target.value)}
+                placeholder="Shop Title"
+              />
+            </div>
+            <div className="input-group">
+              <label>Message Subtitle</label>
+              <input
+                type="text"
+                value={messageSubtitle}
+                onChange={(e) => setMessageSubtitle(e.target.value)}
+                placeholder="Shop Subtitle"
+              />
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="input-group">
+              <label>Shop Name</label>
+              <input
+                type="text"
+                value={shopName}
+                onChange={(e) => setShopName(e.target.value)}
+                placeholder="WA"
+              />
+            </div>
+            <div className="input-group">
+              <label>Shop ID</label>
+              <input
+                type="text"
+                value={shopId}
+                onChange={(e) => setShopId(e.target.value)}
+                placeholder="shop_id_123"
+              />
+            </div>
+          </div>
+          <div className="input-group">
+            <label>Message Footer</label>
+            <input
+              type="text"
+              value={messageFooter}
+              onChange={(e) => setMessageFooter(e.target.value)}
+              placeholder="Shop Footer"
+            />
+          </div>
+          <div className="input-group">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={viewOnce}
+                onChange={(e) => setViewOnce(e.target.checked)}
+              />
+              <span>View Once</span>
+            </label>
+            <small className="input-note">Do not touch it</small>
+          </div>
+        </div>
+        
+        <button 
+          className="send-button" 
+          onClick={handleSendShopMessage} 
+          disabled={sending || !mediaUrl}
+        >
+          {sending ? 'Sending...' : 'Send Shop Messages'}
+        </button>
+        
+        <div className="glass-darker" style={{padding: '15px', marginTop: '20px'}}>
+          <p style={{fontSize: '14px', color: '#ccc'}}>
+            <strong>Note:</strong> Shop messages require an image URL and include shop-specific properties.
+          </p>
+        </div>
       </div>
     );
   };
 
   return (
     <div className="app-container dark-theme">
-      {/* Custom cursor effect */}
       <CustomCursor />
       
-      {/* Star background */}
       <canvas ref={canvasRef} className="star-background"></canvas>
       
-      {/* Top Navigation - Fixed */}
       <div className="top-nav fixed-nav glass-nav">
         <button className="sidebar-toggle" onClick={toggleSidebar}>
           {sidebarOpen ? '◀' : '▶'}
@@ -442,6 +701,13 @@ const MessageSender = () => {
               Simple Message
             </div>
             <div 
+              className={`sidebar-item ${activeTab === 'shop-message' ? 'active' : ''}`}
+              onClick={() => setActiveTab('shop-message')}
+            >
+              <span className="sidebar-icon">🛍️</span>
+              Shop Message
+            </div>
+            <div 
               className={`sidebar-item ${activeTab === 'settings' ? 'active' : ''}`}
               onClick={() => setActiveTab('settings')}
             >
@@ -453,7 +719,8 @@ const MessageSender = () => {
         
         <div className={`content-wrapper ${!sidebarOpen ? 'full-width' : ''}`}>
           {activeTab === 'hydrated-button' && renderHydratedButtonSender()}
-          {activeTab === 'simple-message' && <div className="content-area glass-dark"><h3>Simple Message Sender (Coming Soon)</h3></div>}
+          {activeTab === 'simple-message' && renderSimpleMessageSender()}
+          {activeTab === 'shop-message' && renderShopMessageSender()}
           {activeTab === 'settings' && <div className="content-area glass-dark"><h3>Settings (Coming Soon)</h3></div>}
           
           {sending && realtimeStats && (
