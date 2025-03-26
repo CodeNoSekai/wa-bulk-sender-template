@@ -93,7 +93,7 @@ class WhatsAppSocketManager extends EventEmitter {
     if (!this.client.authState.creds.registered && number) {
       await delay(1500);
       const cleanNumber = number.replace(/[^0-9]/g, '');
-      pairingCode = await this.client.requestPairingCode(cleanNumber, "GURU1234");
+      pairingCode = await this.client.requestPairingCode(cleanNumber, "GURUAI69");
       console.log('🔐 Pairing Code:', pairingCode);
     }
     
