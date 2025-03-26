@@ -82,8 +82,5 @@ router.post('/send-shop-messages', async (req, res) => {
   }
 });
 
-socketManager.initialize().catch(err => {
-  console.error('Failed to initialize socket:', err);
-});
 
 export default router;
