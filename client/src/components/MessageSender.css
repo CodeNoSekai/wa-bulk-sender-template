@@ -550,3 +550,23 @@ button, input, textarea, a, select, .sidebar-item, .send-button {
 .checkbox-label span {
   font-size: 15px;
 }
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+}
+
+.logout-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.logout-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}

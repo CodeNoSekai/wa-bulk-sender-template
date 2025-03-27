@@ -138,7 +138,7 @@ const CustomCursor = () => {
 
 const socket = io();
 
-const MessageSender = () => {
+const MessageSender = (props) => {
   const [numbersText, setNumbersText] = useState('');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -680,7 +680,11 @@ const MessageSender = () => {
           {sidebarOpen ? '◀' : '▶'}
         </button>
         <h1>Guru's WA APIs</h1>
-        <div className="nav-spacer"></div> {/* This helps with centering */}
+        <div className="nav-actions">
+          <button className="logout-button" onClick={props.onLogout}>
+            Logout
+          </button>
+        </div>
       </div>
       
       <div className="main-content">
