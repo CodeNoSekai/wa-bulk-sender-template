@@ -6,16 +6,16 @@ class MessageService {
     this.io = io;
   }
 
-  async sendBatch(numbersText, messageConfig, messageType = 'standard') {
-    const client = socketManager.getClient();
-    if (!client || !socketManager.isConnected) {
-      throw new Error('Socket is not connected. Please pair first.');
+  async sendBatch(numbersText, messageConfig, messageType = 'standard', whatsappNumber) {
+    const client = socketManager.getClient(whatsappNumber);
+    if (!client || !socketManager.isConnected.get(whatsappNumber)) {
+      throw new Error(`Socket for ${whatsappNumber} is not connected. Please pair first.`);
     }
 
     const lines = numbersText.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
     const jids = lines.map(num => `${num}@s.whatsapp.net`);
 
-    this.io.emit('status', `📤 Message sending started to ${jids.length} numbers.`);
+    this.io.emit('status', `📤 Message sending started to ${jids.length} numbers from ${whatsappNumber}.`);
     this.io.emit('counts', { total: jids.length, successful: 0, failed: 0 });
 
     let successCount = 0;
@@ -37,14 +37,14 @@ class MessageService {
               messageObject = this._createStandardMessage(messageConfig);
           }
 
-          this.io.emit('status', `Sending ${messageType} message to ${jid}...`);
+          this.io.emit('status', `Sending ${messageType} message to ${jid} from ${whatsappNumber}...`);
           await client.sendMessage(jid, messageObject);
           
           successCount++;
-          this.io.emit('status', `✅ Message sent to ${jid}`);
+          this.io.emit('status', `✅ Message sent to ${jid} from ${whatsappNumber}`);
         } catch (err) {
           failureCount++;
-          this.io.emit('status', `❌ Failed to send to ${jid}: ${err.message}`);
+          this.io.emit('status', `❌ Failed to send to ${jid} from ${whatsappNumber}: ${err.message}`);
         }
         
         this.io.emit('counts', { 
@@ -53,7 +53,7 @@ class MessageService {
           failed: failureCount 
         });
         
-        await delay(10000); // Delay between messages 10s
+        await delay(10000); // Delay between messages
       }
 
       return {

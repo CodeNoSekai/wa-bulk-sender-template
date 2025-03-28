@@ -16,19 +16,27 @@ dotenv.config();
 class WhatsAppSocketManager extends EventEmitter {
   constructor() {
     super();
-    this.client = null;
-    this.isConnected = false;
-    this.msgRetryCounterCache = new NodeCache();
-    this.authStateManager = null;
+    this.clients = new Map(); 
+    this.isConnected = new Map(); 
+    this.msgRetryCounterCaches = new Map(); 
+    this.authStateManagers = new Map(); 
   }
 
-  async initialize(number = '') {
-    const dbName = process.env.MONGODB_DB_NAME || 'whatsapp_auth';
+  async initialize(number = '', userDbName = '') {
+    const sanitizedNumber = number.replace(/[^0-9]/g, '');
+    const dbName = userDbName || process.env.MONGODB_DB_NAME || `wa_${sanitizedNumber}`;
+    
+    if (this.clients.has(sanitizedNumber)) {
+      return this.isPaired(sanitizedNumber) ? null : await this.requestPairingCode(sanitizedNumber);
+    }
+    
+    this.msgRetryCounterCaches.set(sanitizedNumber, new NodeCache());
+    const msgRetryCounterCache = this.msgRetryCounterCaches.get(sanitizedNumber);
     
     const authState = await useMongoDBAuthState(undefined, dbName);
-    this.authStateManager = authState;
+    this.authStateManagers.set(sanitizedNumber, authState);
     
-    this.client = makeWASocket({
+    const client = makeWASocket({
       auth: {
         creds: authState.state.creds,
         keys: makeCacheableSignalKeyStore(authState.state.keys, pino({ level: 'fatal' })),
@@ -38,12 +46,12 @@ class WhatsAppSocketManager extends EventEmitter {
       logger: pino({ level: 'fatal' }),
       browser: ["Ubuntu", "Chrome", "20.0.04"],
       markOnlineOnConnect: true,
-      msgRetryCounterCache: this.msgRetryCounterCache,
+      msgRetryCounterCache,
       cachedGroupMetadata: async (jid) => {
         try {
-          return await mongoStore.groupMetadata(jid);
+          return await mongoStore.groupMetadata(jid, dbName);
         } catch (err) {
-          console.error('Error fetching group metadata from MongoDB:', err);
+          console.error(`Error fetching group metadata from MongoDB for ${sanitizedNumber}:`, err);
           return null;
         }
       },
@@ -51,103 +59,139 @@ class WhatsAppSocketManager extends EventEmitter {
         try {
           const jid = key.remoteJid ? jidNormalizedUser(key.remoteJid) : null;
           
-          const msg = await mongoStore.loadMessage(key.id, jid);
+          const msg = await mongoStore.loadMessage(key.id, jid, dbName);
           return msg?.message || '';
         } catch (err) {
-          console.error('Error fetching message from MongoDB:', err);
+          console.error(`Error fetching message from MongoDB for ${sanitizedNumber}:`, err);
           return '';
         }
       },
     });
 
-    this.client.ev.on('messages.upsert', async (upsert) => {
+    this.clients.set(sanitizedNumber, client);
+    this.isConnected.set(sanitizedNumber, false);
+
+    client.ev.on('messages.upsert', async (upsert) => {
       try {
-        await mongoStore.saveMessages(upsert);
+        await mongoStore.saveMessages(upsert, dbName);
       } catch (err) {
-        console.error('Error saving messages to MongoDB:', err);
+        console.error(`Error saving messages to MongoDB for ${sanitizedNumber}:`, err);
       }
     });
 
-    this.client.ev.on('contacts.update', async (contacts) => {
+    client.ev.on('contacts.update', async (contacts) => {
       try {
         for (const contact of contacts) {
-          await mongoStore.saveContact(contact);
+          await mongoStore.saveContact(contact, dbName);
         }
       } catch (err) {
-        console.error('Error saving contacts to MongoDB:', err);
+        console.error(`Error saving contacts to MongoDB for ${sanitizedNumber}:`, err);
       }
     });
 
-    this.client.ev.on('message-receipt.update', async (updates) => {
+    client.ev.on('message-receipt.update', async (updates) => {
       try {
-        await mongoStore.saveReceipts(updates);
+        await mongoStore.saveReceipts(updates, dbName);
       } catch (err) {
-        console.error('Error saving receipts to MongoDB:', err);
+        console.error(`Error saving receipts to MongoDB for ${sanitizedNumber}:`, err);
       }
     });
 
-    this.client.ev.on('creds.update', authState.saveCreds);
-    this._setupConnectionListeners();
+    client.ev.on('creds.update', authState.saveCreds);
+    this._setupConnectionListeners(sanitizedNumber);
 
     let pairingCode = null;
-    if (!this.client.authState.creds.registered && number) {
+    if (!client.authState.creds.registered && sanitizedNumber) {
       await delay(1500);
-      const cleanNumber = number.replace(/[^0-9]/g, '');
-      pairingCode = await this.client.requestPairingCode(cleanNumber, "GURUAI69");
-      console.log('🔐 Pairing Code:', pairingCode);
+      pairingCode = await client.requestPairingCode(sanitizedNumber, "GURUAI69");
+      console.log(`🔐 Pairing Code for ${sanitizedNumber}:`, pairingCode);
     }
     
     return pairingCode;
   }
 
-  async disconnect() {
-    if (this.client) {
-      this.client.end();
-      this.client = null;
-      this.isConnected = false;
+  async disconnect(number) {
+    const sanitizedNumber = number ? number.replace(/[^0-9]/g, '') : null;
+    
+    if (sanitizedNumber) {
+      const client = this.clients.get(sanitizedNumber);
+      if (client) {
+        await client.end();
+        this.clients.delete(sanitizedNumber);
+        this.isConnected.delete(sanitizedNumber);
+        this.msgRetryCounterCaches.delete(sanitizedNumber);
+        
+        const authState = this.authStateManagers.get(sanitizedNumber);
+        if (authState && authState.closeConnection) {
+          await authState.closeConnection();
+        }
+        this.authStateManagers.delete(sanitizedNumber);
+      }
+    } else {
+      for (const [num, client] of this.clients.entries()) {
+        if (client) {
+          await client.end();
+        }
+      }
+      
+      this.clients.clear();
+      this.isConnected.clear();
+      this.msgRetryCounterCaches.clear();
+      
+      for (const authState of this.authStateManagers.values()) {
+        if (authState && authState.closeConnection) {
+          await authState.closeConnection();
+        }
+      }
+      this.authStateManagers.clear();
     }
     
     try {
-      await mongoConnectionManager.closeAllConnections();
+      if (!sanitizedNumber) {
+        await mongoConnectionManager.closeAllConnections();
+      }
     } catch (err) {
       console.error('Error closing MongoDB connections:', err);
     }
   }
 
-  _setupConnectionListeners() {
-    this.client.ev.on('connection.update', async (s) => {
+  _setupConnectionListeners(number) {
+    const client = this.clients.get(number);
+    
+    if (!client) return;
+
+    client.ev.on('connection.update', async (s) => {
       const { connection, lastDisconnect } = s;
 
       if (connection === 'open') {
-        this.isConnected = true;
-        console.log('✅ Socket connected.');
-        this.emit('connection', { status: 'connected' });
+        this.isConnected.set(number, true);
+        console.log(`✅ Socket connected for ${number}.`);
+        this.emit('connection', { status: 'connected', number });
       }
 
       if (connection === 'close') {
-        this.isConnected = false;
+        this.isConnected.set(number, false);
         const reason = lastDisconnect?.error?.message || '';
-        console.log(`⚠ Socket disconnected: ${reason}`);
-        this.emit('connection', { status: 'disconnected', reason });
+        console.log(`⚠ Socket disconnected for ${number}: ${reason}`);
+        this.emit('connection', { status: 'disconnected', reason, number });
 
         if (!reason.includes('logged out')) {
-          console.log('🔁 Reinitializing socket in 5s...');
+          console.log(`🔁 Reinitializing socket for ${number} in 5s...`);
           
           try {
-            console.log('📤 Closing MongoDB connections before reconnect...');
-            await mongoConnectionManager.closeAllConnections();
+            console.log(`📤 Closing MongoDB connections for ${number} before reconnect...`);
           } catch (err) {
-            console.error('Error closing MongoDB connections:', err);
+            console.error(`Error closing MongoDB connections for ${number}:`, err);
           }
           
           await delay(5000);
           
           if (reason.includes('Stream Errored')) {
-            console.log('🔄 Performing clean reconnection for Stream Error...');
-            await this.disconnect();
-            await this.initialize(); 
+            console.log(`🔄 Performing clean reconnection for Stream Error on ${number}...`);
+            await this.disconnect(number);
+            await this.initialize(number); 
           } else {
-            await this.initialize();
+            await this.initialize(number);
           }
         }
       }
@@ -155,32 +199,45 @@ class WhatsAppSocketManager extends EventEmitter {
   }
 
   async requestPairingCode(number) {
-    if (!this.client) throw new Error('Socket not initialized');
+    const sanitizedNumber = number.replace(/[^0-9]/g, '');
+    const client = this.clients.get(sanitizedNumber);
     
-    const cleanNumber = number.replace(/[^0-9]/g, '');
-    const code = await this.client.requestPairingCode(cleanNumber, "GURUAI69");
-    console.log('🔐 Pairing Code:', code);
+    if (!client) {
+      throw new Error('Socket not initialized for this number');
+    }
+    
+    const code = await client.requestPairingCode(sanitizedNumber, "GURUAI69");
+    console.log(`🔐 Pairing Code for ${sanitizedNumber}:`, code);
     return code;
   }
 
-  isInitialized() {
-    return !!this.client;
+  isInitialized(number) {
+    const sanitizedNumber = number.replace(/[^0-9]/g, '');
+    return this.clients.has(sanitizedNumber);
   }
 
-  isPaired() {
-    return this.client?.authState?.creds?.registered;
+  isPaired(number) {
+    const sanitizedNumber = number.replace(/[^0-9]/g, '');
+    const client = this.clients.get(sanitizedNumber);
+    return client?.authState?.creds?.registered;
   }
 
-  getClient() {
-    return this.client;
+  getClient(number) {
+    const sanitizedNumber = number ? number.replace(/[^0-9]/g, '') : null;
+    return sanitizedNumber ? this.clients.get(sanitizedNumber) : null;
   }
 
-  getConnectionStatus() {
+  getConnectionStatus(number) {
+    const sanitizedNumber = number.replace(/[^0-9]/g, '');
     return {
-      initialized: this.isInitialized(),
-      connected: this.isConnected,
-      paired: this.isPaired()
+      initialized: this.isInitialized(sanitizedNumber),
+      connected: this.isConnected.get(sanitizedNumber) || false,
+      paired: this.isPaired(sanitizedNumber)
     };
+  }
+  
+  getAllNumbers() {
+    return Array.from(this.clients.keys());
   }
 }
 

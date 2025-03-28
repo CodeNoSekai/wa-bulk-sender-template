@@ -162,6 +162,14 @@ const MessageSender = (props) => {
   const [shopId, setShopId] = useState('default_shop_id');
   const [viewOnce, setViewOnce] = useState(true);
 
+  const [userNumbers, setUserNumbers] = useState([]);
+  const [newNumber, setNewNumber] = useState('');
+  const [numberLoading, setNumberLoading] = useState(false);
+  const [pairingCode, setPairingCode] = useState(null);
+  const [activeNumber, setActiveNumber] = useState(null);
+  const [numberError, setNumberError] = useState(null);
+  const [numberStatus, setNumberStatus] = useState({});
+
   useEffect(() => {
     const blob = blobRef.current;
     
@@ -274,6 +282,129 @@ const MessageSender = (props) => {
     }
   }, [logs]);
 
+  useEffect(() => {
+    if (props.user?.uid) {
+      fetchUserNumbers();
+    }
+  }, [props.user]);
+
+  const fetchUserNumbers = async () => {
+    try {
+      setNumberLoading(true);
+      setNumberError(null);
+      const response = await axios.get(`/pair/numbers?uid=${props.user.uid}`);
+      setUserNumbers(response.data.numbers || []);
+      
+      const active = response.data.numbers?.find(num => num.isActive);
+      if (active) {
+        setActiveNumber(active.number);
+      }
+
+      const statusPromises = response.data.numbers.map(async (num) => {
+        const status = await getNumberStatus(num.number);
+        return { number: num.number, status };
+      });
+
+      const statuses = await Promise.all(statusPromises);
+      const statusMap = statuses.reduce((acc, { number, status }) => {
+        acc[number] = status;
+        return acc;
+      }, {});
+
+      setNumberStatus(statusMap);
+      
+      setNumberLoading(false);
+    } catch (err) {
+      console.error('Error fetching user numbers:', err);
+      setNumberError('Failed to load your WhatsApp numbers');
+      setNumberLoading(false);
+    }
+  };
+
+  const handleAddNumber = async () => {
+    if (!newNumber) return;
+    
+    try {
+      setNumberLoading(true);
+      setNumberError(null);
+      
+      await axios.post('/pair/register-number', {
+        uid: props.user.uid,
+        number: newNumber
+      });
+      
+      setNewNumber('');
+      fetchUserNumbers();
+    } catch (err) {
+      console.error('Error adding number:', err);
+      setNumberError('Failed to add number');
+      setNumberLoading(false);
+    }
+  };
+
+  const handleRemoveNumber = async (number) => {
+    try {
+      setNumberLoading(true);
+      await axios.post('/pair/remove-number', {
+        uid: props.user.uid,
+        number
+      });
+      fetchUserNumbers();
+    } catch (err) {
+      console.error('Error removing number:', err);
+      setNumberError('Failed to remove number');
+      setNumberLoading(false);
+    }
+  };
+
+  const handleConnectNumber = async (number) => {
+    try {
+      setNumberLoading(true);
+      setNumberError(null);
+      setPairingCode(null);
+      
+      const { data } = await axios.get(`/pair?number=${number}&uid=${props.user.uid}`);
+      
+      if (data.code) {
+        setPairingCode({
+          number: number,
+          code: data.code
+        });
+      } else if (data.message === 'Already paired') {
+        await axios.post('/pair/set-active-number', {
+          uid: props.user.uid,
+          number
+        });
+        
+        setActiveNumber(number);
+      }
+      
+      fetchUserNumbers();
+    } catch (err) {
+      console.error('Error connecting number:', err);
+      setNumberError('Failed to connect WhatsApp number');
+      setNumberLoading(false);
+    }
+  };
+
+  const handleSetActive = async (number) => {
+    try {
+      setNumberLoading(true);
+      
+      await axios.post('/pair/set-active-number', {
+        uid: props.user.uid,
+        number
+      });
+      
+      setActiveNumber(number);
+      fetchUserNumbers();
+    } catch (err) {
+      console.error('Error setting active number:', err);
+      setNumberError('Failed to set active number');
+      setNumberLoading(false);
+    }
+  };
+
   const handleSend = async () => {
     if (!numbersText || !message) return alert('Enter both numbers and message');
   
@@ -288,7 +419,7 @@ const MessageSender = (props) => {
         : '/pair/send-messages';
       
       const requestBody = activeTab === 'simple-message'
-        ? { numbersText, message }
+        ? { numbersText, message, uid: props.user.uid }
         : { 
             numbersText, 
             message,
@@ -297,7 +428,8 @@ const MessageSender = (props) => {
             messageTitle,
             messageSubtitle,
             messageFooter,
-            mediaUrl 
+            mediaUrl,
+            uid: props.user.uid
           };
       
       const response = await axios.post(endpoint, requestBody);
@@ -348,7 +480,8 @@ const MessageSender = (props) => {
         messageFooter,
         shopName,
         shopId,
-        viewOnce
+        viewOnce,
+        uid: props.user.uid
       });
       
       if (response.data.summary) {
@@ -378,6 +511,15 @@ const MessageSender = (props) => {
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
+  };
+
+  const getNumberStatus = async (number) => {
+    try {
+      const { data } = await axios.get(`/pair/status?number=${number}`);
+      return data;
+    } catch (err) {
+      return { initialized: false, connected: false, paired: false };
+    }
   };
 
   const renderHydratedButtonSender = () => {
@@ -669,6 +811,91 @@ const MessageSender = (props) => {
     );
   };
 
+  const renderSettings = () => {
+    return (
+      <div className="content-area glass-dark number-manager">
+        <h3>Manage your WhatsApp Numbers </h3>
+        
+        {numberError && <div className="error-message">{numberError}</div>}
+        
+        {pairingCode && (
+          <div className="pairing-code-box">
+            <h4>Enter this code in WhatsApp</h4>
+            <div className="pairing-code">{pairingCode.code}</div>
+            <p>Open WhatsApp on your phone and tap Menu or Settings. Select Linked Devices {'>'} Link a Device and enter the code above.</p>
+            <button onClick={() => setPairingCode(null)}>Close</button>
+          </div>
+        )}
+        
+        <div className="add-number">
+          <input
+            type="text"
+            value={newNumber}
+            onChange={(e) => setNewNumber(e.target.value)}
+            placeholder="Add new number (with country code)"
+          />
+          <button 
+            onClick={handleAddNumber}
+            disabled={numberLoading || !newNumber}
+          >
+            {numberLoading ? 'Adding...' : 'Add'}
+          </button>
+        </div>
+        
+        <div className="numbers-list">
+          {userNumbers.length === 0 ? (
+            <div className="no-numbers">No WhatsApp numbers added yet</div>
+          ) : (
+            userNumbers.map((numberObj) => (
+              <div 
+                key={numberObj.number}
+                className={`number-item ${numberObj.isActive ? 'active' : ''}`}
+              >
+                <div className="number-info">
+                  <span className="number">{numberObj.number}</span>
+                  {numberObj.isActive && <span className="active-badge">Active</span>}
+                  {numberStatus[numberObj.number] && (
+                    <span className={`connection-badge ${numberStatus[numberObj.number].connected ? 'connected' : 'disconnected'}`}>
+                      {numberStatus[numberObj.number].connected ? 'Connected' : 'Disconnected'}
+                    </span>
+                  )}
+                </div>
+                
+                <div className="number-actions">
+                  {!numberObj.isActive && (
+                    <button 
+                      className="set-active-btn"
+                      onClick={() => handleSetActive(numberObj.number)}
+                      disabled={numberLoading}
+                    >
+                      Set Active
+                    </button>
+                  )}
+                  
+                  <button 
+                    className="connect-btn"
+                    onClick={() => handleConnectNumber(numberObj.number)}
+                    disabled={numberLoading}
+                  >
+                    Connect
+                  </button>
+                  
+                  <button 
+                    className="remove-btn"
+                    onClick={() => handleRemoveNumber(numberObj.number)}
+                    disabled={numberLoading}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="app-container dark-theme">
       <CustomCursor />
@@ -681,6 +908,11 @@ const MessageSender = (props) => {
         </button>
         <h1>Guru's WA APIs</h1>
         <div className="nav-actions">
+          {activeNumber && (
+            <div className="active-number-display">
+              <span>Active: {activeNumber}</span>
+            </div>
+          )}
           <button className="logout-button" onClick={props.onLogout}>
             Logout
           </button>
@@ -716,7 +948,7 @@ const MessageSender = (props) => {
               onClick={() => setActiveTab('settings')}
             >
               <span className="sidebar-icon">⚙️</span>
-              Settings
+              WhatsApp Numbers
             </div>
           </div>
         )}
@@ -725,7 +957,7 @@ const MessageSender = (props) => {
           {activeTab === 'hydrated-button' && renderHydratedButtonSender()}
           {activeTab === 'simple-message' && renderSimpleMessageSender()}
           {activeTab === 'shop-message' && renderShopMessageSender()}
-          {activeTab === 'settings' && <div className="content-area glass-dark"><h3>Settings (Coming Soon)</h3></div>}
+          {activeTab === 'settings' && renderSettings()}
           
           {sending && realtimeStats && (
             <div className="summary-box realtime glass-dark">
@@ -771,7 +1003,6 @@ const MessageSender = (props) => {
             </div>
           )}
           
-          {/* Status Console */}
           <div className="status-box glass-darker">
             <h4>Status Console</h4>
             <div className="logs" ref={logsRef}>

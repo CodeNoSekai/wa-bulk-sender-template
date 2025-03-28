@@ -1,4 +1,3 @@
-
 /**
  * MongoDB Store
  * 
@@ -18,27 +17,26 @@ import { ObjectId } from 'mongodb';
 
 dotenv.config();
 
-const dbName = 'whatsapp_store';
-
-async function getDb() {
+async function getDb(customDbName) {
+  const dbName = customDbName || 'whatsapp_store';
   return mongoConnectionManager.getDb(dbName);
 }
 
-async function ContactStore() {
-  const database = await getDb();
+async function ContactStore(dbName) {
+  const database = await getDb(dbName);
   
   await database.collection('contacts').createIndex({ jid: 1 }, { unique: true });
 }
 
-export async function groupMetadata(jid) {
-  const database = await getDb();
+export async function groupMetadata(jid, dbName) {
+  const database = await getDb(dbName);
   const groupMetadataCollection = database.collection('group_metadata');
   const result = await groupMetadataCollection.findOne({ jid });
   return result?.metadata;
 }
 
-export async function saveMessages(upsert) {
-  const database = await getDb();
+export async function saveMessages(upsert, dbName) {
+  const database = await getDb(dbName);
   const messagesCollection = database.collection('messages');
 
   try {
@@ -140,8 +138,8 @@ export async function saveMessages(upsert) {
   }
 }
 
-export async function loadMessage(id, jid = null) {
-  const database = await getDb();
+export async function loadMessage(id, jid = null, dbName) {
+  const database = await getDb(dbName);
   const messagesCollection = database.collection('messages');
   
   const query = { 'key.id': id };
@@ -153,9 +151,9 @@ export async function loadMessage(id, jid = null) {
   return message ? message.data : null;
 }
 
-export async function saveContact(contact) {
-  await ContactStore();
-  const database = await getDb();
+export async function saveContact(contact, dbName) {
+  await ContactStore(dbName);
+  const database = await getDb(dbName);
   const contactsCollection = database.collection('contacts');
 
   await contactsCollection.updateOne(
@@ -172,8 +170,8 @@ export async function saveContact(contact) {
   );
 }
 
-export async function saveReceipts(updates) {
-  const database = await getDb();
+export async function saveReceipts(updates, dbName) {
+  const database = await getDb(dbName);
   const receiptsCollection = database.collection('message_receipts');
 
   try {

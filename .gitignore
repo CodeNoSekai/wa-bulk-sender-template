@@ -3,3 +3,4 @@ session
 build
 .env
 client/.env
+firebase-service-account.json

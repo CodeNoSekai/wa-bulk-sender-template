@@ -2,13 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import LandingPage from './components/LandingPage';
-import LoginPage from './components/LoginPage';
 import MessageSender from './components/MessageSender';
 
 const App = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [whatsappConnected, setWhatsappConnected] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -23,14 +21,9 @@ const App = () => {
     setUser(user);
   };
 
-  const handleWhatsAppConnected = () => {
-    setWhatsappConnected(true);
-  };
-  
   const handleLogout = async () => {
     try {
       await auth.signOut();
-      setWhatsappConnected(false);
     } catch (error) {
       console.error("Logout error:", error);
     }
@@ -47,10 +40,13 @@ const App = () => {
 
   if (!user) {
     return <LandingPage onLogin={handleGitHubLogin} />;
-  } else if (!whatsappConnected) {
-    return <LoginPage onConnected={handleWhatsAppConnected} />;
   } else {
-    return <MessageSender onLogout={handleLogout} />;
+    return (
+      <MessageSender 
+        onLogout={handleLogout} 
+        user={user}
+      />
+    );
   }
 };
 
